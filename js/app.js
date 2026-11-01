@@ -10,7 +10,7 @@ import { abrirFeedback, enviarAvaliacao } from './feedback.js';
 import {
   CLUBES_TORCIDA, RESPOSTAS_SN, EXTRA_APOS_ERRO, MAX_PALPITES, MAX_PERGUNTAS, TOTAL_DIFICIL,
   posterior, proximaPergunta, horaDeChutar, escudoDoClube, titulosDoClube, clubePorId,
-  montarDificil, perguntasFinaisDificil, ranquearTorcida, opostoDe, decadaDe, RIVAL,
+  montarDificil, perguntasFinaisDificil, ranquearTorcida, opostoDe, idadeDe, PASSOS_IDADE, RIVAL,
 } from './torcida.js';
 import { gerarCardTorcida } from './card.js';
 
@@ -844,8 +844,8 @@ function rotuloTamanho(v) {
 }
 
 function sliderDificilVisual(q, v) {
-  const valor = q.ui === 'ano' ? `${decadaDe(v)}` : rotuloTamanho(v);
-  const legenda = q.ui === 'ano' ? 'década de fundação' : 'torcida';
+  const valor = q.ui === 'idade' ? idadeDe(v).rotulo : rotuloTamanho(v);
+  const legenda = q.ui === 'idade' ? idadeDe(v).detalhe : 'torcida';
   return `<div class="numero-grande"><span class="tabnum">${valor}</span><small>${legenda}</small></div>`;
 }
 
@@ -865,18 +865,21 @@ function telaDificil() {
       <button class="op-escala" data-acao="dificil-responder" data-valor="${r.id}" data-nivel="${i}"><i aria-hidden="true"></i><span>${r.texto}</span></button>`).join('')}</div>`;
   } else if (q.ui === 'mapa') {
     corpo = `<div class="acao-mapa">${mapaSVG(d.rascunho)}
-      <div class="formacoes">${q.opcoes.map(([id, nome]) => `<button class="chip-form${d.rascunho === id ? ' sel' : ''}" data-acao="dificil-rascunho" data-valor="${id}">${nome}</button>`).join('')}</div></div>`;
+      <div class="formacoes">${q.opcoes.map(([id, nome]) => `<button class="chip-form${d.rascunho === id ? ' sel' : ''}" data-acao="dificil-rascunho" data-valor="${id}">${nome}</button>`).join('')}</div>
+      <button class="btn-link nao-sei" data-acao="dificil-responder" data-valor="nao-sei">Não sei, pular esta</button></div>`;
   } else if (q.ui === 'cores') {
     corpo = `<div class="acao-camisa">${camisaSVG(d.rascunho)}
       <div class="cores-grade">${Object.keys(COR_HEX).map((c) => `
         <button class="chip-cor${d.rascunho.includes(c) ? ' sel' : ''}" data-acao="dificil-cor" data-valor="${c}" style="--cor:${COR_HEX[c]}" aria-pressed="${d.rascunho.includes(c)}">
           <i aria-hidden="true"></i>${COR_NOME[c]}</button>`).join('')}</div>
-      <p class="campo-legenda">${d.rascunho.length ? `${d.rascunho.length} de 3 cores` : 'Toque nas cores para pintar a camisa'}</p></div>`;
+      <p class="campo-legenda">${d.rascunho.length ? `${d.rascunho.length} de 3 cores` : 'Toque nas cores para pintar a camisa'}</p>
+      <button class="btn-link nao-sei" data-acao="dificil-responder" data-valor="nao-sei">Não sei, pular esta</button></div>`;
   } else if (q.tipo === 'slider') {
-    const step = q.ui === 'ano' ? 1 / 13 : 0.01;
+    const step = q.ui === 'idade' ? 1 / (PASSOS_IDADE - 1) : 0.01;
     corpo = `<div class="acao-slider">${sliderDificilVisual(q, d.rascunho)}
       <input type="range" id="dificil-${q.id}" class="slider" min="0" max="1" step="${step}" value="${d.rascunho}" aria-label="${esc(q.texto)}" data-acao="dificil-slider">
-      <div class="slider-rotulos"><span>${esc(q.rotulos[0])}</span><span>${esc(q.rotulos[1])}</span></div></div>`;
+      <div class="slider-rotulos"><span>${esc(q.rotulos[0])}</span><span>${esc(q.rotulos[1])}</span></div>
+      <button class="btn-link nao-sei" data-acao="dificil-responder" data-valor="nao-sei">Não sei, pular esta</button></div>`;
   } else {
     corpo = `<div class="opcoes">${q.opcoes.map(([id, texto], i) => `
       <button class="op" data-acao="dificil-responder" data-valor="${esc(id)}"><span class="op-letra">${'ABCDEFGH'[i]}</span><span>${esc(texto)}</span></button>`).join('')}

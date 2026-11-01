@@ -104,6 +104,75 @@ export const CLUBES_TORCIDA = [
   C('uberlandia', 'Uberlândia', 'MG', 'Uberlândia', 'D', { capital: false, litoral: false, fundacao: 1922, cores: ['verde', 'branco'], principal: null, listrada: null, mascote: null, mascoteTipo: null, br: false, lib: false, cb: false, ne: false, massa: 3, arena: false, rivalCidade: false, nomeLugar: true, apelido: 'Verdão do Triângulo', estadio: 'Parque do Sabiá', rival: null, idolo: null }),
 ];
 
+// ---------------------------------------------------------------- História, títulos, estádio e comunidade
+// Cada linha: ids com "sim" e ids com "não". Quem não aparece fica null (não sabemos, não pesa).
+// Fontes: CBF (títulos brasileiros e rebaixamentos), CONMEBOL (finais), FIFA (Mundial/Intercontinental),
+// sites oficiais dos clubes (fundação, hino, estádio), imprensa esportiva (capacidades, patrocínios).
+
+const ids = (s) => s.trim().split(/\s+/);
+const GRANDES = 'flamengo vasco fluminense botafogo corinthians palmeiras saopaulo santos cruzeiro atletico gremio inter';
+const linha = (sim, nao) => ({ sim: ids(sim), nao: nao === '*' ? '*' : ids(nao || '') });
+
+const ATRIBUTOS = {
+  // Mundial de Clubes FIFA ou Intercontinental (reconhecidos pela FIFA). Palmeiras (Copa Rio 1951) fica em aberto.
+  mundial: linha('santos flamengo gremio saopaulo corinthians inter',
+    'vasco fluminense botafogo cruzeiro atletico athletico coritiba bahia vitoria sport ceara fortaleza goias nautico santa-cruz paysandu remo guarani portuguesa chapecoense bragantino'),
+  // Campeão brasileiro entre 2016 e 2025.
+  brRecente: linha('palmeiras corinthians flamengo atletico botafogo', '*'),
+  // Já caiu da Série A para a Série B.
+  caiu: linha(`vasco fluminense botafogo corinthians palmeiras santos cruzeiro atletico gremio inter athletico coritiba bahia vitoria sport
+    ceara fortaleza goias nautico santa-cruz paysandu remo america-mg atletico-go avai figueirense criciuma juventude chapecoense
+    ponte-preta guarani portuguesa bragantino cuiaba csa joinville america-rn`,
+  'flamengo saopaulo mirassol novorizontino sao-bernardo amazonas athletic-mg barra-sc floresta maringa brusque'),
+  // Já jogou final de Libertadores ou Sul-Americana.
+  finalConmebol: linha(`${GRANDES} athletico chapecoense fortaleza bragantino goias`, '*'),
+  // Estádio onde manda os jogos cabe mais de 40 mil pessoas.
+  estadioGrande: linha('flamengo fluminense corinthians saopaulo palmeiras botafogo cruzeiro atletico gremio inter athletico coritiba bahia ceara fortaleza cuiaba santa-cruz remo',
+    `santos vasco chapecoense vitoria bragantino mirassol america-mg athletic-mg atletico-go avai botafogo-sp crb criciuma goias juventude londrina nautico
+    novorizontino operario-pr ponte-preta sao-bernardo sport vila-nova amazonas anapolis barra-sc botafogo-pb brusque caxias ferroviaria figueirense
+    floresta guarani inter-limeira itabaiana ituano maringa paysandu volta-redonda ypiranga-rs confianca abc treze tuna-luso csa asa ferroviario gama
+    joinville brasil-pelotas portuguesa xv-piracicaba noroeste america-rj madureira rio-branco-es sergipe uberlandia`),
+  // O estádio onde joga pertence ao próprio clube.
+  estadioProprio: linha(`palmeiras corinthians saopaulo santos vasco atletico inter athletico coritiba vitoria sport nautico ponte-preta guarani juventude
+    figueirense avai criciuma portuguesa paysandu abc goias atletico-go vila-nova`,
+  'flamengo fluminense botafogo cruzeiro bahia ceara fortaleza remo chapecoense bragantino cuiaba santa-cruz'),
+  // Fundado por colônia de imigrantes.
+  imigrantes: linha('palmeiras cruzeiro juventude vasco portuguesa tuna-luso coritiba',
+    'flamengo fluminense botafogo corinthians saopaulo santos atletico inter bahia sport'),
+  // Nasceu entre trabalhadores (operários, ferroviários).
+  operarios: linha('corinthians operario-pr ferroviaria ferroviario',
+    'flamengo fluminense botafogo vasco palmeiras saopaulo santos atletico cruzeiro gremio inter'),
+  // História marcante de luta contra o racismo ou pela democracia.
+  luta: linha('vasco corinthians bahia', 'flamengo fluminense botafogo palmeiras saopaulo santos cruzeiro atletico gremio'),
+  // Orgulho de ser "time do povo" ou "o mais querido".
+  povo: linha('flamengo corinthians inter sergipe', 'fluminense botafogo vasco palmeiras saopaulo santos cruzeiro atletico gremio'),
+  // Hino popular composto por Lamartine Babo (só clubes do Rio).
+  lamartine: linha('flamengo fluminense vasco botafogo america-rj', '*'),
+  // Escudo com cruz.
+  cruz: linha('vasco portuguesa tuna-luso',
+    'flamengo fluminense botafogo corinthians palmeiras saopaulo santos cruzeiro atletico gremio inter bahia vitoria sport athletico coritiba'),
+};
+
+// Patrocínio histórico marcante (categoria).
+const PATROCINIO = {
+  palmeiras: 'parmalat', juventude: 'parmalat', fluminense: 'unimed', flamengo: 'lubrax', gremio: 'banrisul', inter: 'banrisul',
+  corinthians: 'nenhum', saopaulo: 'nenhum', santos: 'nenhum', vasco: 'nenhum', botafogo: 'nenhum', cruzeiro: 'nenhum', atletico: 'nenhum',
+};
+
+// Títulos brasileiros (Série A, incluindo Taça Brasil e Robertão unificados pela CBF), até 2025.
+const BRASILEIROS = {
+  palmeiras: 12, flamengo: 9, santos: 8, corinthians: 7, saopaulo: 6, vasco: 4, fluminense: 4, cruzeiro: 4,
+  botafogo: 3, atletico: 3, inter: 3, gremio: 2, bahia: 2, athletico: 1, coritiba: 1, sport: 1, guarani: 1,
+};
+
+for (const c of CLUBES_TORCIDA) {
+  for (const [campo, { sim, nao }] of Object.entries(ATRIBUTOS)) {
+    c[campo] = sim.includes(c.id) ? true : (nao === '*' || nao.includes(c.id)) ? false : null;
+  }
+  c.patrocinio = PATROCINIO[c.id] || null;
+  c.brasileiros = BRASILEIROS[c.id] || (c.br === false ? 0 : null);
+}
+
 export const REGIAO_UF = {
   AC: 'N', AM: 'N', AP: 'N', PA: 'N', RO: 'N', RR: 'N', TO: 'N',
   AL: 'NE', BA: 'NE', CE: 'NE', MA: 'NE', PB: 'NE', PE: 'NE', PI: 'NE', RN: 'NE', SE: 'NE',

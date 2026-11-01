@@ -1,5 +1,5 @@
 import { CLUBES_TORCIDA, REGIAO_UF, DOZE_GRANDES, DEZ_MAIORES_TORCIDAS } from './data/torcida.js';
-import { CLUBES } from './data/times.js';
+import { CLUBES, TIMES } from './data/times.js';
 
 // Modo "Para qual time você torce?": adivinhação no estilo Akinator.
 // Cada clube começa com uma probabilidade (torcidas maiores pesam mais). Cada resposta multiplica a
@@ -10,7 +10,7 @@ import { CLUBES } from './data/times.js';
 export const MAX_PERGUNTAS = 40;
 export const EXTRA_APOS_ERRO = 6;
 export const MAX_PALPITES = 3;
-const CERTEZA_PARA_CHUTAR = 0.85;
+const CERTEZA_PARA_CHUTAR = 0.9;
 const MIN_PERGUNTAS = 5;
 
 export const RESPOSTAS_SN = [
@@ -76,16 +76,60 @@ Object.entries(contagem).filter(([, n]) => n >= 2).forEach(([m]) => {
     (c) => (c.mascote ? c.mascote === m : null)));
 });
 
-// Perguntas finais, montadas com os candidatos mais prováveis.
+// História, títulos, estádio, comunidade, uniforme e patrocínio.
+const ATUAL = Object.fromEntries(TIMES.filter((t) => t.tipo === 'atual').map((t) => [t.clube, t.eixos]));
+const faixa = (v, alto, baixo) => (v === undefined ? null : v >= alto ? true : v <= baixo ? false : null);
+
+PERGUNTAS.push(
+  sn('mundial', 'Títulos', 'O seu time já foi campeão do mundo?', doCampo('mundial')),
+  sn('mais5br', 'Títulos', 'O seu time tem mais de 5 títulos brasileiros?', (c) => (c.brasileiros === null ? null : c.brasileiros > 5)),
+  sn('br-recente', 'Títulos', 'O seu time foi campeão brasileiro nos últimos 10 anos?', doCampo('brRecente')),
+  sn('caiu', 'História', 'O seu time já caiu da Série A para a Série B alguma vez?', doCampo('caiu')),
+  sn('final-conmebol', 'Títulos', 'O seu time já jogou uma final de Libertadores ou de Sul-Americana?', doCampo('finalConmebol')),
+  sn('estadio-grande', 'Estádio', 'O estádio onde o seu time manda os jogos cabe mais de 40 mil pessoas?', doCampo('estadioGrande')),
+  sn('estadio-proprio', 'Estádio', 'O estádio onde o seu time joga pertence ao próprio clube?', doCampo('estadioProprio')),
+  sn('imigrantes', 'Comunidade', 'O seu time foi fundado por uma colônia de imigrantes (italianos, portugueses, alemães…)?', doCampo('imigrantes')),
+  sn('operarios', 'Comunidade', 'O seu time nasceu entre trabalhadores, como operários ou ferroviários?', doCampo('operarios')),
+  sn('luta', 'Lutas', 'O seu time tem uma história marcante de luta contra o racismo ou pela democracia?', doCampo('luta')),
+  sn('povo', 'Torcida', 'A sua torcida se orgulha de chamar o clube de "time do povo" ou "o mais querido"?', doCampo('povo')),
+  sn('lamartine', 'Hino', 'O hino que a sua torcida mais canta foi composto por Lamartine Babo?', doCampo('lamartine')),
+  sn('cruz', 'Uniforme', 'O escudo do seu time tem uma cruz?', doCampo('cruz')),
+  sn('posse', 'Tática', 'Nesta temporada, o seu time costuma ficar mais com a bola do que o adversário?', (c) => faixa(ATUAL[c.id]?.posse, 60, 48)),
+  sn('pressao', 'Tática', 'O seu time é conhecido por pressionar a saída de bola do adversário?', (c) => faixa(ATUAL[c.id]?.pressao, 70, 50)),
+  cat('patrocinio', 'Patrocínio', 'Qual destas marcas estampou a camisa do seu time por muitos anos?',
+    [['parmalat', 'Parmalat'], ['unimed', 'Unimed'], ['lubrax', 'Lubrax (Petrobras)'], ['banrisul', 'Banrisul'], ['nenhum', 'Nenhuma dessas']],
+    doCampo('patrocinio')),
+);
+
+// Perguntas sobre o maior rival, sem dizer quem é ele.
+const doRival = (f) => (c) => {
+  const r = RIVAL[c.id] && CLUBES_TORCIDA.find((x) => x.id === RIVAL[c.id]);
+  return r ? f(r) : null;
+};
+PERGUNTAS.push(
+  sn('rival-mundial', 'Rivalidade', 'O maior rival do seu time já foi campeão do mundo?', doRival((r) => r.mundial)),
+  sn('rival-alvinegro', 'Rivalidade', 'O maior rival do seu time é alvinegro?',
+    doRival((r) => (r.cores ? r.cores.length === 2 && r.cores.includes('preto') && r.cores.includes('branco') : null))),
+  sn('rival-br-recente', 'Rivalidade', 'O maior rival foi campeão brasileiro nos últimos 10 anos?', doRival((r) => r.brRecente)),
+  sn('rival-mais5', 'Rivalidade', 'O maior rival tem mais de 5 títulos brasileiros?', doRival((r) => (r.brasileiros === null ? null : r.brasileiros > 5))),
+  sn('rival-nunca-caiu', 'Rivalidade', 'O maior rival do seu time nunca caiu para a Série B?', doRival((r) => (r.caiu === null ? null : !r.caiu))),
+  sn('rival-libertadores', 'Rivalidade', 'O maior rival já ganhou a Libertadores?', doRival((r) => r.lib)),
+);
+
+// Perguntas diretas demais: valem menos na escolha da próxima pergunta, para o jogo preferir as de
+// história, títulos, comunidade e rivalidade quando o ganho for parecido.
+const OBVIAS = new Set(['regiao', 'serie', 'cor-principal', 'mascote-tipo', 'capital', 'litoral', 'nome-lugar', 'listrada',
+  'tricolor', 'alvinegro', 'rubro-negro', 'cor-vermelho', 'cor-verde', 'cor-azul', 'cor-amarelo', 'cor-preto', 'cor-grena']);
+PERGUNTAS.forEach((q) => { q.obvia = OBVIAS.has(q.id) || q.id.startsWith('mascote-'); });
+
+// Pergunta final, montada com os candidatos mais prováveis.
 const DINAMICAS = [
-  { campo: 'estadio', tag: 'Estádio', texto: 'Em qual destes estádios o seu time manda os jogos?' },
-  { campo: 'idolo', tag: 'Ídolo', texto: 'Qual destes é um ídolo do seu time?' },
-  { campo: 'apelido', tag: 'Apelido', texto: 'Qual destes apelidos é do seu time?' },
-  { campo: 'rival', tag: 'Rivalidade', texto: 'Qual destes é o maior rival do seu time?' },
+  { campo: 'idolo', tag: 'Ídolo', texto: 'Qual destes craques é ídolo da sua torcida?' },
 ];
 
-const PROB_CATEGORIA = 0.9;
-const PROB_SN = 0.94;
+// Tolerância a erro: quem torce para um clube responde certo ~88–90% das vezes.
+const PROB_CATEGORIA = 0.88;
+const PROB_SN = 0.9;
 
 function verossimilhanca(q, clube, resposta) {
   if (resposta === null || resposta === undefined) return 1;
@@ -162,10 +206,13 @@ export function proximaPergunta(historico, eliminados) {
   }
   if (!candidatas.length) return null;
   const hAtual = entropia(dist.map((d) => d.p));
-  const notas = candidatas.map((q) => ({ q, h: entropiaEsperada(q, dist) })).sort((a, b) => a.h - b.h);
-  if (hAtual - notas[0].h < 0.01) return null;
+  const notas = candidatas.map((q) => {
+    const ganho = hAtual - entropiaEsperada(q, dist);
+    return { q, ganho, nota: ganho * (q.obvia ? 0.55 : 1.15) };
+  }).filter((n) => n.ganho >= 0.01).sort((a, b) => b.nota - a.nota);
+  if (!notas.length) return null;
   // Um pouco de variedade entre perguntas quase tão boas quanto a melhor.
-  const boas = notas.filter((n) => n.h <= notas[0].h + 0.08).slice(0, 3);
+  const boas = notas.filter((n) => n.nota >= notas[0].nota * 0.85).slice(0, 3);
   return boas[Math.floor(Math.random() * boas.length)].q;
 }
 
@@ -181,12 +228,20 @@ export function horaDeChutar(historico, eliminados, limite) {
 export const TOTAL_DIFICIL = 15;
 const DINAMICAS_NO_FIM = 2;
 
-const DECADAS = Array.from({ length: 14 }, (_, i) => 1890 + i * 10);
+// Tempo de história em faixas (idade do clube em 2026), em vez de pedir a década exata.
+const IDADES = [
+  { rotulo: 'Bem novo', detalhe: 'menos de 30 anos', centro: 15 },
+  { rotulo: 'Jovem', detalhe: '30 a 60 anos', centro: 45 },
+  { rotulo: 'Tradicional', detalhe: '60 a 90 anos', centro: 75 },
+  { rotulo: 'Centenário', detalhe: '90 a 110 anos', centro: 100 },
+  { rotulo: 'Dos mais antigos', detalhe: 'mais de 110 anos', centro: 118 },
+];
+const ANO_BASE = 2026;
 const gauss = (d, s) => Math.exp(-((d / s) ** 2));
 
 const ACOES_DIFICIL = [
   {
-    id: 'mapa', tipo: 'cat', ui: 'mapa', tag: 'Mapa', texto: 'Toque no mapa: em que região fica a casa do seu time?',
+    id: 'mapa', tipo: 'cat', ui: 'mapa', tag: 'Sotaque', texto: 'Toque no mapa: de onde vem o sotaque da sua arquibancada?',
     opcoes: [['N', 'Norte'], ['NE', 'Nordeste'], ['CO', 'Centro-Oeste'], ['SE', 'Sudeste'], ['S', 'Sul']],
     valor: (c) => REGIAO_UF[c.uf],
   },
@@ -205,11 +260,11 @@ const ACOES_DIFICIL = [
     },
   },
   {
-    id: 'fundacao', tipo: 'slider', ui: 'ano', tag: 'História', texto: 'Arraste: em que época o seu time foi fundado?',
-    passos: DECADAS.map((d) => `${d}`), rotulos: ['Século XIX', 'Anos 2020'], unidade: 'década de fundação',
+    id: 'historia', tipo: 'slider', ui: 'idade', tag: 'História', texto: 'Arraste: quanta história o seu time já tem?',
+    rotulos: ['Clube novo', 'Dos mais antigos do país'],
     valor: (c) => c.fundacao,
-    vero: (c, v) => (c.fundacao ? 0.08 + 0.92 * gauss(c.fundacao - (decadaDe(v) + 5), 14) : 1),
-    conc: (c, v) => (c.fundacao ? gauss(c.fundacao - (decadaDe(v) + 5), 20) : null),
+    vero: (c, v) => (c.fundacao ? 0.08 + 0.92 * gauss(ANO_BASE - c.fundacao - idadeDe(v).centro, 18) : 1),
+    conc: (c, v) => (c.fundacao ? gauss(ANO_BASE - c.fundacao - idadeDe(v).centro, 25) : null),
   },
   {
     id: 'tamanho-torcida', tipo: 'slider', ui: 'tamanho', tag: 'Torcida', texto: 'Arraste: qual é o tamanho da torcida do seu time?',
@@ -220,9 +275,10 @@ const ACOES_DIFICIL = [
   },
 ];
 
-export const decadaDe = (v) => DECADAS[Math.round(v * (DECADAS.length - 1))];
+export const idadeDe = (v) => IDADES[Math.round(v * (IDADES.length - 1))];
+export const PASSOS_IDADE = IDADES.length;
 
-const NUCLEO_DIFICIL = ['serie', 'mascote-tipo'];
+const NUCLEO_DIFICIL = [];
 
 function embaralhar(lista) {
   const a = [...lista];
@@ -237,10 +293,17 @@ function embaralhar(lista) {
 export function montarDificil() {
   const nucleo = [...ACOES_DIFICIL, ...PERGUNTAS.filter((q) => NUCLEO_DIFICIL.includes(q.id))];
   // Fora do sorteio: o que o núcleo já cobre (região, cor principal) e perguntas de mascote específico.
-  const fora = new Set(['regiao', 'cor-principal', ...NUCLEO_DIFICIL]);
-  const resto = embaralhar(PERGUNTAS.filter((q) => !fora.has(q.id) && !q.id.startsWith('mascote-')));
-  const n = TOTAL_DIFICIL - DINAMICAS_NO_FIM;
-  return embaralhar([...nucleo, ...resto.slice(0, n - nucleo.length)]);
+  // Fora: o que as ações já cobrem (região, cores, idade, tamanho da torcida).
+  const fora = new Set(['regiao', 'cor-principal', 'centenario', 'jovem', 'top10', ...NUCLEO_DIFICIL]);
+  const pool = PERGUNTAS.filter((q) => !fora.has(q.id) && !q.id.startsWith('mascote-'));
+  // Prioridade para história, títulos, comunidade, tática e rivalidade; no máximo 1 pergunta direta
+  // além do mapa e da camisa.
+  const vagas = TOTAL_DIFICIL - DINAMICAS_NO_FIM - nucleo.length;
+  const escolhidas = [
+    ...embaralhar(pool.filter((q) => !q.obvia)).slice(0, vagas - 1),
+    ...embaralhar(pool.filter((q) => q.obvia)).slice(0, 1),
+  ];
+  return embaralhar([...nucleo, ...escolhidas]);
 }
 
 export function perguntasFinaisDificil(historico) {
@@ -253,7 +316,8 @@ export function perguntasFinaisDificil(historico) {
   }
   // Se os candidatos não tiverem dados para isso, completa com perguntas do banco.
   const feitas = new Set(historico.map((h) => h.pergunta.id));
-  const extras = embaralhar(PERGUNTAS.filter((q) => !feitas.has(q.id) && !q.id.startsWith('mascote-')));
+  const repetidas = new Set(['centenario', 'jovem', 'top10']);
+  const extras = embaralhar(PERGUNTAS.filter((q) => !feitas.has(q.id) && !q.obvia && !repetidas.has(q.id)));
   while (lista.length < DINAMICAS_NO_FIM && extras.length) lista.push(extras.shift());
   return lista;
 }

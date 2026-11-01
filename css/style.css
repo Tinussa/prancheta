@@ -265,6 +265,7 @@ p { margin: 0; }
 .ficha dd { margin: 0; font: 800 1.3rem/1.15 var(--f-display); text-transform: uppercase; }
 
 /* modo torcida difícil */
+.nao-sei { justify-self: start; font-size: 0.9rem; }
 .rank-torcida .rank-item { grid-template-columns: auto minmax(0, 1fr) auto; }
 .acao-mapa, .acao-camisa { display: grid; gap: 14px; justify-items: start; }
 .mapa { width: 100%; max-width: 420px; height: auto; }
