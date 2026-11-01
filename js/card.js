@@ -2,6 +2,7 @@ import { EIXOS } from './data/eixos.js';
 import { TIPO_TREINADOR } from './data/treinadores.js';
 import { TIPO_TIME } from './data/times.js';
 import { escudoSVG } from './escudos.js';
+import { SITE } from './config.js';
 
 // Card 1080 × 1920 (Stories) desenhado em canvas.
 const W = 1080;
@@ -158,7 +159,9 @@ export async function gerarCard({ modo, user, ranking }) {
   ctx.fillStyle = COR.suave;
   ctx.font = `500 34px ${CORPO}`;
   const tipo = modo === 'treinador' ? TIPO_TREINADOR[p.tipo] : TIPO_TIME[p.tipo];
-  const meta = modo === 'treinador' ? `${p.pais} · ${tipo}` : `${p.tecnico ? `${p.tecnico} · ` : ''}${tipo}`;
+  const meta = modo === 'treinador'
+    ? `${p.pais} · ${p.clube.split(' · ')[0]} · ${tipo}`
+    : `${p.tecnico ? `${p.tecnico} · ` : ''}${tipo}`;
   quebrar(ctx, meta, largNome).slice(0, 2).forEach((l, i) => ctx.fillText(l, M, y + 10 + i * 42));
 
   // placar de compatibilidade (abaixo da foto)
@@ -243,7 +246,8 @@ export async function gerarCard({ modo, user, ranking }) {
   ctx.fillStyle = COR.texto;
   ctx.font = `600 34px ${ROTULO}`;
   ctx.textAlign = 'center';
-  const host = /^https?:/.test(location.protocol) && !location.host.includes('claude') ? location.host : 'Prancheta';
+  const local = !/^https?:/.test(location.protocol) || /localhost|127\.0\.0\.1|claude/.test(location.host);
+  const host = local ? SITE : location.host;
   ctx.fillText(`E VOCÊ? JOGUE EM ${host.toUpperCase()}`, W / 2, H - 90);
   ctx.textAlign = 'left';
 
