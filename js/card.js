@@ -3,6 +3,7 @@ import { TIPO_TREINADOR } from './data/treinadores.js';
 import { TIPO_TIME } from './data/times.js';
 import { escudoSVG } from './escudos.js';
 import { SITE } from './config.js';
+import { escudoDoClube } from './torcida.js';
 
 // Card 1080 × 1920 (Stories) desenhado em canvas.
 const W = 1080;
@@ -242,14 +243,110 @@ export async function gerarCard({ modo, user, ranking }) {
     y += 62;
   });
 
-  // rodapé
+  rodape(ctx, 'E VOCÊ? JOGUE EM');
+  return paraUrl(cv);
+}
+
+function rodape(ctx, chamada) {
   ctx.fillStyle = COR.texto;
   ctx.font = `600 34px ${ROTULO}`;
   ctx.textAlign = 'center';
   const local = !/^https?:/.test(location.protocol) || /localhost|127\.0\.0\.1|claude/.test(location.host);
   const host = local ? SITE : location.host;
-  ctx.fillText(`E VOCÊ? JOGUE EM ${host.toUpperCase()}`, W / 2, H - 90);
+  ctx.fillText(`${chamada} ${host.toUpperCase()}`, W / 2, H - 90);
   ctx.textAlign = 'left';
+}
 
-  return new Promise((ok, erro) => cv.toBlob((b) => (b ? ok(URL.createObjectURL(b)) : erro(new Error('toBlob'))), 'image/png'));
+const paraUrl = (cv) => new Promise((ok, erro) => cv.toBlob((b) => (b ? ok(URL.createObjectURL(b)) : erro(new Error('toBlob'))), 'image/png'));
+
+// Card do modo torcida: escudo, "eu torço para", quantas perguntas a Prancheta precisou e a ficha do clube.
+export async function gerarCardTorcida({ clube: c, acertou, perguntas }) {
+  await carregarFontes();
+  const cv = document.createElement('canvas');
+  cv.width = W;
+  cv.height = H;
+  const ctx = cv.getContext('2d');
+  const M = 90;
+  fundo(ctx);
+
+  ctx.textBaseline = 'alphabetic';
+  ctx.fillStyle = COR.amarelo;
+  ctx.font = `900 54px ${DISPLAY}`;
+  ctx.fillText('PRANCHETA', M, 150);
+  ctx.fillStyle = COR.suave;
+  ctx.font = `600 30px ${ROTULO}`;
+  ctx.textAlign = 'right';
+  ctx.fillText('PARA QUAL TIME VOCÊ TORCE?', W - M, 146);
+  ctx.textAlign = 'center';
+
+  // escudo
+  const svg = escudoSVG(escudoDoClube(c)).replace('<svg ', '<svg width="300" height="360" ');
+  const img = await new Promise((ok) => {
+    const i = new Image();
+    i.onload = () => ok(i);
+    i.onerror = () => ok(null);
+    i.src = URL.createObjectURL(new Blob([svg], { type: 'image/svg+xml' }));
+  });
+  if (img) ctx.drawImage(img, W / 2 - 150, 220, 300, 360);
+
+  ctx.fillStyle = COR.suave;
+  ctx.font = `600 42px ${ROTULO}`;
+  ctx.fillText('EU TORÇO PARA', W / 2, 670);
+
+  // nome (até 2 linhas)
+  const nome = c.nome.toUpperCase();
+  let tam = 176;
+  let linhas;
+  do {
+    tam -= 8;
+    ctx.font = `900 ${tam}px ${DISPLAY}`;
+    linhas = quebrar(ctx, nome, W - 2 * M);
+  } while ((linhas.length > 2 || linhas.some((l) => ctx.measureText(l).width > W - 2 * M)) && tam > 72);
+  ctx.fillStyle = COR.texto;
+  let y = 670 + tam * 0.98;
+  linhas.slice(0, 2).forEach((l) => { ctx.fillText(l, W / 2, y); y += tam * 0.92; });
+  y += 70 - tam * 0.92;
+
+  ctx.fillStyle = COR.suave;
+  ctx.font = `500 36px ${CORPO}`;
+  ctx.fillText([c.apelido, `${c.cidade} · ${c.uf}`].filter(Boolean).join('  ·  '), W / 2, y);
+
+  // placar da adivinhação
+  y += 70;
+  ctx.fillStyle = COR.amarelo;
+  ctx.fillRect(M, y, W - 2 * M, 190);
+  ctx.fillStyle = '#1a1400';
+  if (acertou && perguntas) {
+    ctx.font = `700 40px ${ROTULO}`;
+    ctx.fillText('A PRANCHETA ADIVINHOU EM', W / 2, y + 62);
+    ctx.font = `900 110px ${DISPLAY}`;
+    ctx.fillText(`${perguntas} PERGUNTA${perguntas === 1 ? '' : 'S'}`, W / 2, y + 168);
+  } else {
+    ctx.font = `700 40px ${ROTULO}`;
+    ctx.fillText('DESSA VEZ', W / 2, y + 70);
+    ctx.font = `900 92px ${DISPLAY}`;
+    ctx.fillText('A PRANCHETA ERROU', W / 2, y + 160);
+  }
+
+  // ficha
+  y += 270;
+  ctx.textAlign = 'left';
+  const ficha = [
+    ['ESTÁDIO', c.estadio], ['MASCOTE', c.mascote], ['FUNDAÇÃO', c.fundacao],
+    ['MAIOR RIVAL', c.rival], ['DIVISÃO EM 2026', `Série ${c.serie}`], ['ÍDOLO', c.idolo],
+  ].filter(([, v]) => v).slice(0, 4);
+  const colW = (W - 2 * M) / 2;
+  ficha.forEach(([k, v], i) => {
+    const x = M + (i % 2) * colW;
+    const yy = y + Math.floor(i / 2) * 150;
+    ctx.fillStyle = COR.suave;
+    ctx.font = `600 30px ${ROTULO}`;
+    ctx.fillText(k, x, yy);
+    ctx.fillStyle = COR.texto;
+    ctx.font = `800 48px ${DISPLAY}`;
+    quebrar(ctx, String(v).toUpperCase(), colW - 30).slice(0, 2).forEach((l, j) => ctx.fillText(l, x, yy + 54 + j * 50));
+  });
+
+  rodape(ctx, 'E VOCÊ? DESCUBRA O SEU EM');
+  return paraUrl(cv);
 }

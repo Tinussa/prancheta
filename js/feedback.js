@@ -78,7 +78,7 @@ export function enviarAvaliacao(dados) {
       ...dados,
       pagina: location.href,
       data: new Date().toISOString(),
-      _subject: `Prancheta · Avaliação ${dados.nota}/5 · ${dados.perfil}`,
+      _subject: dados._subject || `Prancheta · Avaliação ${dados.nota}/5 · ${dados.perfil}`,
     }),
   }).catch(() => {});
 }

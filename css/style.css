@@ -164,6 +164,9 @@ p { margin: 0; }
   padding-block: 8px 56px;
 }
 @media (min-width: 800px) { .modos { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+@media (min-width: 800px) and (max-width: 1099px) { .modo-torcida { grid-column: 1 / -1; } }
+@media (min-width: 1100px) { .modos { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
+.versoes-uma { grid-template-columns: minmax(0, 1fr); }
 .modo {
   background: var(--surface);
   border: 1px solid var(--line);
@@ -230,6 +233,36 @@ p { margin: 0; }
 .estrela.on { color: var(--accent); }
 .estrela:hover { transform: scale(1.12); }
 .avaliacao-rotulo { margin-left: 10px; font: 600 0.95rem/1.2 var(--f-label); letter-spacing: 0.06em; color: var(--accent); }
+
+/* modo torcida */
+.op-neutra { border-style: dashed; color: var(--muted); }
+.certeza-txt { font: 600 0.9rem/1.2 var(--f-label); letter-spacing: 0.1em; text-transform: uppercase; color: var(--accent); }
+.placar-certeza i { background: linear-gradient(90deg, var(--muted), var(--accent)); }
+.palpite { display: grid; gap: 22px; }
+.palpite-cartao {
+  display: flex; flex-wrap: wrap; align-items: center; gap: 24px;
+  padding: 24px; background: var(--surface); border: 1px solid var(--line); border-radius: var(--r);
+}
+.palpite-txt { display: grid; gap: 8px; min-width: 0; }
+.palpite-pergunta { font: 600 1rem/1.2 var(--f-label); letter-spacing: 0.12em; text-transform: uppercase; color: var(--muted); }
+.palpite h1 { font: 900 clamp(2.6rem, 8vw, 4.6rem)/0.95 var(--f-display); text-transform: uppercase; overflow-wrap: anywhere; }
+.escolher { display: grid; gap: 18px; }
+.escolher-grade { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 160px), 1fr)); gap: 8px; }
+.escolher-item {
+  display: flex; align-items: center; gap: 10px; padding: 10px 12px; text-align: left;
+  background: var(--surface); border: 1px solid var(--line); border-radius: var(--r);
+  font: 700 1rem/1.2 var(--f-label); letter-spacing: 0.04em;
+}
+.escolher-item:hover { border-color: var(--accent); }
+.escolher-item .escudo { width: 30px; height: 36px; }
+.escolher-select select {
+  font: 400 1rem/1.4 var(--f-body); letter-spacing: 0; text-transform: none; color: var(--fg);
+  background: var(--bg-2); border: 1px solid var(--line); border-radius: var(--r); padding: 10px 12px; width: 100%;
+}
+.ficha { margin: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 220px), 1fr)); gap: 1px; background: var(--line); border: 1px solid var(--line); border-radius: var(--r); overflow: hidden; }
+.ficha-item { background: var(--bg-2); padding: 14px 16px; display: grid; gap: 4px; }
+.ficha dt { font: 600 0.8rem/1.2 var(--f-label); letter-spacing: 0.12em; text-transform: uppercase; color: var(--muted); }
+.ficha dd { margin: 0; font: 800 1.3rem/1.15 var(--f-display); text-transform: uppercase; }
 
 /* janela de feedback */
 .feedback {

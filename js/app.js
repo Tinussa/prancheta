@@ -7,12 +7,18 @@ import { campo, jogadores } from './campo.js';
 import { gerarCard } from './card.js';
 import { escudoSVG } from './escudos.js';
 import { abrirFeedback, enviarAvaliacao } from './feedback.js';
+import {
+  CLUBES_TORCIDA, RESPOSTAS_SN, MAX_PERGUNTAS, EXTRA_APOS_ERRO, MAX_PALPITES,
+  posterior, proximaPergunta, horaDeChutar, escudoDoClube, titulosDoClube, clubePorId,
+} from './torcida.js';
+import { gerarCardTorcida } from './card.js';
 
 const app = document.getElementById('app');
 
 const MODOS = {
   treinador: { rotulo: 'Qual treinador você seria?', curto: 'Treinador', num: 1 },
   time: { rotulo: 'Qual time você escolheria?', curto: 'Time', num: 2 },
+  torcida: { rotulo: 'Para qual time você torce?', curto: 'Torcida', num: 3 },
 };
 
 const ESCALA = [
@@ -33,6 +39,8 @@ const estado = {
   rascunho: null, // valor ainda não confirmado (formação, zona, slider)
   resultado: null,
   cardUrl: null,
+  // modo torcida
+  torcida: null, // { historico: [{ pergunta, resposta, rotulo }], atual, eliminados: Set, palpites, limite, palpite }
 };
 
 const esc = (s) => String(s).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]);
@@ -91,6 +99,23 @@ function telaInicio() {
       <section class="modos wrap" id="jogar">
         ${modoCard('treinador', 'Qual treinador você seria?', 'De Telê Santana a Abel Ferreira, de Zagallo a Filipe Luís. Treinadores atuais, lendas e estrangeiros que marcaram o futebol brasileiro.', `${TREINADORES.length} treinadores`)}
         ${modoCard('time', 'Qual time você escolheria?', 'Os 20 clubes da Série A 2026, esquadrões como o Santos de 1962 e campanhas inesquecíveis como o Santo André de 2004 e o Paysandu de 2003. Conta tática, elenco e identidade do clube.', `${TIMES.length} times`)}
+        <article class="modo modo-torcida">
+          <div class="modo-bug">
+            <span class="bug-n">3</span>
+            <span class="bug-t">Modo torcida</span>
+            <span class="bug-q">${CLUBES_TORCIDA.length} clubes</span>
+          </div>
+          <h2>Para qual time você torce?</h2>
+          <p>Responda sobre cores, mascote, títulos, estádio e rivais. A Prancheta tenta adivinhar o seu time de coração entre clubes das Séries A, B, C e D.</p>
+          <div class="tema">
+            <p class="tema-cab"><b>Adivinhação</b><span>Cada resposta escolhe a próxima pergunta</span></p>
+            <div class="versoes versoes-uma">
+              <button class="versao versao-forte" data-acao="torcida-iniciar">
+                <b>Começar</b><span>até ${MAX_PERGUNTAS} perguntas</span>
+              </button>
+            </div>
+          </div>
+        </article>
       </section>
 
       <section class="bloco wrap" id="eixos">
@@ -504,12 +529,269 @@ function creditoFoto(p) {
   return `<a class="credito" href="${base}${encodeURIComponent(p.foto.arquivo)}" target="_blank" rel="noopener">Foto: ${nome}</a>`;
 }
 
+// ---------------------------------------------------------------- Modo torcida
+
+function placarTorcida(n, limite, certeza) {
+  const minuto = Math.min(90, Math.round((n / limite) * 90));
+  return `
+    <div class="placar">
+      <div class="wrap placar-in">
+        <button class="placar-sair" data-acao="inicio" aria-label="Sair do jogo">✕</button>
+        <span class="placar-modo">Torcida</span>
+        <span class="placar-min tabnum" aria-label="Pergunta ${n + 1}">${num(minuto)}'</span>
+        <div class="placar-barra placar-certeza" role="meter" aria-label="Certeza do palpite" aria-valuemin="0" aria-valuemax="100" aria-valuenow="${Math.round(certeza * 100)}"><i style="width:${Math.round(certeza * 100)}%"></i></div>
+        <span class="placar-cont tabnum">${num(n + 1)}</span>
+      </div>
+    </div>`;
+}
+
+function fraseCerteza(p) {
+  if (p >= 0.7) return 'Já tenho um palpite forte.';
+  if (p >= 0.4) return 'Estou chegando perto…';
+  if (p >= 0.15) return 'Começando a desconfiar.';
+  return 'Ainda sem pistas suficientes.';
+}
+
+function telaTorcida() {
+  const t = estado.torcida;
+  const q = t.atual;
+  const dist = posterior(t.historico, t.eliminados);
+  const resposta = q.tipo === 'sn'
+    ? `<div class="escala escala-sn">${RESPOSTAS_SN.map((r, i) => `
+        <button class="op-escala" data-acao="torcida-responder" data-valor="${r.id}" data-nivel="${i}">
+          <i aria-hidden="true"></i><span>${r.texto}</span>
+        </button>`).join('')}</div>`
+    : `<div class="opcoes">${q.opcoes.map(([id, texto], i) => `
+        <button class="op" data-acao="torcida-responder" data-valor="${esc(id)}">
+          <span class="op-letra">${'ABCDEFGH'[i]}</span><span>${esc(texto)}</span>
+        </button>`).join('')}
+        <button class="op op-neutra" data-acao="torcida-responder" data-valor="nao-sei"><span class="op-letra">?</span><span>Não sei</span></button>
+      </div>`;
+  return `
+    ${placarTorcida(t.historico.length, t.limite, dist[0].p)}
+    <main class="quiz wrap">
+      <article class="pergunta" data-tipo="torcida-${q.tipo}">
+        <p class="tag">${esc(q.tag)}</p>
+        <h1 class="pergunta-txt">${esc(q.texto)}</h1>
+        <div class="resposta">${resposta}</div>
+        <p class="certeza-txt">${fraseCerteza(dist[0].p)}</p>
+        <div class="quiz-nav">
+          <button class="btn-sec" data-acao="torcida-voltar" ${t.historico.length === 0 ? 'disabled' : ''}>← Voltar</button>
+          ${t.historico.length >= 5 ? '<button class="btn-sec" data-acao="torcida-chutar">Chutar agora</button>' : ''}
+        </div>
+        <button class="btn-link reportar" data-acao="feedback" data-tipo="correcao" data-sobre="Modo torcida, pergunta: ${esc(q.texto)}">Reportar problema nesta pergunta</button>
+      </article>
+    </main>`;
+}
+
+function telaPalpite() {
+  const t = estado.torcida;
+  const c = t.palpite;
+  return `
+    ${placarTorcida(Math.max(0, t.historico.length - 1), t.limite, 1)}
+    <main class="quiz wrap palpite">
+      <p class="eyebrow">Palpite ${t.palpites} de ${MAX_PALPITES}</p>
+      <div class="palpite-cartao">
+        ${escudoSVG(escudoDoClube(c), 'escudo escudo-g')}
+        <div class="palpite-txt">
+          <p class="palpite-pergunta">Você torce para…</p>
+          <h1>${esc(c.nome)}?</h1>
+          <p class="res-meta">${esc(c.cidade)} · ${esc(c.uf)}${c.apelido ? ` · ${esc(c.apelido)}` : ''}</p>
+        </div>
+      </div>
+      <div class="botoes">
+        <button class="btn-pri" data-acao="palpite-sim">Acertou!</button>
+        <button class="btn-sec" data-acao="palpite-nao">Não é esse</button>
+      </div>
+    </main>`;
+}
+
+function telaEscolher() {
+  const t = estado.torcida;
+  const dist = posterior(t.historico, new Set());
+  const sugestoes = dist.filter((d) => !t.eliminados.has(d.clube.id)).slice(0, 8);
+  const todos = [...CLUBES_TORCIDA].sort((a, b) => a.nome.localeCompare(b.nome, 'pt-BR'));
+  return `
+    ${topo()}
+    <main class="quiz wrap escolher">
+      <p class="eyebrow">Dessa vez você venceu</p>
+      <h1 class="pergunta-txt">Não consegui adivinhar. Para qual time você torce?</h1>
+      <p class="lead">Sua resposta ajuda a Prancheta a acertar da próxima vez.</p>
+      <div class="escolher-grade">
+        ${sugestoes.map(({ clube }) => `
+          <button class="escolher-item" data-acao="torcida-escolher" data-id="${clube.id}">
+            ${escudoSVG(escudoDoClube(clube))}<span>${esc(clube.nome)}</span>
+          </button>`).join('')}
+      </div>
+      <label class="fb-campo escolher-select" for="escolher-todos">Ou procure na lista
+        <select id="escolher-todos">
+          <option value="">Escolha o seu time</option>
+          ${todos.map((c) => `<option value="${c.id}">${esc(c.nome)} (${esc(c.uf)})</option>`).join('')}
+          <option value="outro">Meu time não está na lista</option>
+        </select>
+      </label>
+      <div class="botoes">
+        <button class="btn-pri" data-acao="torcida-escolher-lista">Confirmar</button>
+      </div>
+    </main>
+    ${rodape()}`;
+}
+
+function telaResultadoTorcida() {
+  const { clube: c, acertou, perguntas, compartilhado } = estado.resultado;
+  const fatos = [
+    ['Cidade', `${c.cidade} (${c.uf})`],
+    ['Divisão em 2026', `Série ${c.serie}`],
+    ['Apelido', c.apelido],
+    ['Mascote', c.mascote],
+    ['Estádio', c.estadio],
+    ['Maior rival', c.rival],
+    ['Ídolo', c.idolo],
+    ['Fundação', c.fundacao],
+    ['Grandes títulos', titulosDoClube(c).join(', ')],
+  ].filter(([, v]) => v);
+  const frase = compartilhado
+    ? 'Resultado compartilhado'
+    : acertou
+      ? `A Prancheta acertou em ${perguntas} pergunta${perguntas === 1 ? '' : 's'}`
+      : 'Dessa vez a Prancheta errou. Obrigado por ensinar!';
+  return `
+    ${topo()}
+    <main class="resultado">
+      <section class="res-hero wrap">
+        <div class="res-txt">
+          <p class="eyebrow">Você torce para</p>
+          <div class="res-nome-linha">
+            <figure class="res-retrato">${escudoSVG(escudoDoClube(c), 'escudo escudo-g')}</figure>
+            <h1>${esc(c.nome)}</h1>
+          </div>
+          <p class="res-meta">${esc(c.cidade)} · ${esc(c.uf)} <span class="pill">Série ${c.serie} em 2026</span></p>
+          <p class="res-estilo">${esc(frase)}</p>
+        </div>
+        ${!compartilhado && acertou ? `<div class="res-placar" aria-label="Acertou em ${perguntas} perguntas">
+          <span class="res-pct tabnum">${perguntas}</span>
+          <span class="res-pct-rot">pergunta${perguntas === 1 ? '' : 's'}</span>
+        </div>` : ''}
+      </section>
+
+      <section class="bloco wrap">
+        <div class="bloco-cab"><h2>Ficha do clube</h2></div>
+        <dl class="ficha">
+          ${fatos.map(([k, v]) => `<div class="ficha-item"><dt>${k}</dt><dd>${esc(v)}</dd></div>`).join('')}
+        </dl>
+      </section>
+
+      <section class="bloco wrap compartilhar">
+        <div class="card-preview">
+          ${estado.cardUrl ? `<img src="${estado.cardUrl}" alt="Card: eu torço para ${esc(c.nome)}">` : '<div class="card-carregando">Gerando o card…</div>'}
+        </div>
+        <div class="compartilhar-txt">
+          <p class="eyebrow">Compartilhe</p>
+          <h2>Seu card de torcedor</h2>
+          <p>Formato Stories (1080 × 1920). No celular, você também pode tocar e segurar a imagem para salvar.</p>
+          <div class="botoes">
+            <button class="btn-pri" data-acao="baixar-card">Baixar card</button>
+            <button class="btn-sec" data-acao="compartilhar">Compartilhar</button>
+            <button class="btn-sec" data-acao="copiar-link">Copiar link</button>
+          </div>
+          <p class="aviso" id="aviso" role="status"></p>
+          <div class="botoes botoes-fim">
+            <button class="btn-sec" data-acao="torcida-iniciar">Jogar de novo</button>
+            <button class="btn-link" data-acao="iniciar" data-modo="time" data-versao="curta" data-tema="futebol">Descobrir que time você escolheria pelo estilo</button>
+          </div>
+        </div>
+      </section>
+
+      <section class="wrap res-correcao">
+        <button class="btn-link reportar" data-acao="feedback" data-tipo="correcao" data-sobre="Modo torcida: ${esc(c.nome)} (${esc(c.id)})">Algo errado sobre ${esc(c.nome)}? Corrigir informação</button>
+      </section>
+    </main>
+    ${rodape()}`;
+}
+
+function iniciarTorcida() {
+  estado.modo = 'torcida';
+  estado.torcida = { historico: [], atual: null, eliminados: new Set(), palpites: 0, limite: MAX_PERGUNTAS, palpite: null };
+  limparUrl();
+  avancarTorcida(true);
+}
+
+function avancarTorcida(rolar = false) {
+  const t = estado.torcida;
+  const proxima = horaDeChutar(t.historico, t.eliminados, t.limite) ? null : proximaPergunta(t.historico, t.eliminados);
+  if (!proxima) return chutar();
+  t.atual = proxima;
+  render('torcida', rolar);
+}
+
+function chutar() {
+  const t = estado.torcida;
+  if (t.palpites >= MAX_PALPITES) return render('escolher');
+  t.palpites += 1;
+  t.palpite = posterior(t.historico, t.eliminados)[0].clube;
+  render('palpite');
+}
+
+function responderTorcida(valor) {
+  const t = estado.torcida;
+  const q = t.atual;
+  let resposta = null;
+  if (q.tipo === 'sn') resposta = RESPOSTAS_SN.find((r) => r.id === valor).v;
+  else if (valor !== 'nao-sei') resposta = valor;
+  t.historico.push({ pergunta: q, resposta, valor });
+  avancarTorcida();
+}
+
+function resultadoTorcida(clube, acertou, compartilhado = false, perguntas = estado.torcida?.historico.length || 0) {
+  estado.modo = 'torcida';
+  estado.resultado = { modo: 'torcida', clube, acertou, perguntas, compartilhado };
+  estado.cardUrl = null;
+  render('resultadoTorcida');
+  try {
+    if (!compartilhado) history.replaceState(null, '', `?f=${clube.id}.${perguntas}.${acertou ? 1 : 0}`);
+  } catch { /* ignora */ }
+  gerarCardTorcida(estado.resultado).then((url) => {
+    estado.cardUrl = url;
+    const box = app.querySelector('.card-preview');
+    if (box) box.innerHTML = `<img src="${url}" alt="Card: eu torço para ${esc(clube.nome)}">`;
+  }).catch(() => {
+    const box = app.querySelector('.card-preview');
+    if (box) box.innerHTML = '<div class="card-carregando">Não foi possível gerar o card neste navegador.</div>';
+  });
+}
+
+// Quando a Prancheta erra, o relato vai para o feedback para corrigir a base.
+function registrarErroTorcida(real) {
+  const t = estado.torcida;
+  enviarAvaliacao({
+    tipo: 'torcida-erro',
+    _subject: `Prancheta · Torcida: errou (era ${real ? real.nome : 'time fora da lista'})`,
+    nota: 0,
+    perfil: real ? real.nome : 'time fora da lista',
+    id: real ? real.id : 'outro',
+    palpites: [...t.eliminados].join(', '),
+    respostas: t.historico.map((h) => `${h.pergunta.id}=${h.valor}`).join('; '),
+  });
+}
+
 // ---------------------------------------------------------------- Fluxo
+
+const TELAS = {
+  inicio: () => telaInicio(),
+  quiz: () => telaQuiz(),
+  resultado: () => telaResultado(),
+  torcida: () => telaTorcida(),
+  palpite: () => telaPalpite(),
+  escolher: () => telaEscolher(),
+  resultadoTorcida: () => telaResultadoTorcida(),
+};
 
 function render(tela, rolar = true) {
   estado.tela = tela;
-  app.innerHTML = tela === 'quiz' ? telaQuiz() : tela === 'resultado' ? telaResultado() : telaInicio();
-  document.title = tela === 'resultado' ? `${estado.resultado.ranking[0].perfil.nome} · Prancheta` : 'Prancheta';
+  app.innerHTML = (TELAS[tela] || TELAS.inicio)();
+  document.title = tela === 'resultado' ? `${estado.resultado.ranking[0].perfil.nome} · Prancheta`
+    : tela === 'resultadoTorcida' ? `${estado.resultado.clube.nome} · Prancheta`
+      : 'Prancheta';
   if (rolar) window.scrollTo(0, 0);
 }
 
@@ -571,16 +853,26 @@ function aviso(txt) {
 }
 
 function linkResultado() {
-  const { modo, user } = estado.resultado;
-  return `${location.origin}${location.pathname}?r=${codificar(modo, user)}`;
+  const r = estado.resultado;
+  if (r.modo === 'torcida') return `${location.origin}${location.pathname}?f=${r.clube.id}.${r.perguntas}.${r.acertou ? 1 : 0}`;
+  return `${location.origin}${location.pathname}?r=${codificar(r.modo, r.user)}`;
+}
+
+function textoCompartilhar() {
+  const r = estado.resultado;
+  if (r.modo === 'torcida') {
+    return r.acertou
+      ? `A Prancheta descobriu em ${r.perguntas} perguntas que eu torço para ${r.clube.nome}. Será que ela adivinha o seu time?`
+      : `Eu torço para ${r.clube.nome} e a Prancheta não conseguiu adivinhar. Será que ela adivinha o seu time?`;
+  }
+  const p = r.ranking[0];
+  return r.modo === 'treinador'
+    ? `Na Prancheta, meu estilo é ${p.match}% ${p.perfil.nome}. Qual treinador você seria?`
+    : `Na Prancheta, meu time é o ${p.perfil.nome} (${p.match}%). Qual time você escolheria?`;
 }
 
 async function compartilhar() {
-  const { modo, ranking } = estado.resultado;
-  const p = ranking[0];
-  const texto = modo === 'treinador'
-    ? `Na Prancheta, meu estilo é ${p.match}% ${p.perfil.nome}. Qual treinador você seria?`
-    : `Na Prancheta, meu time é o ${p.perfil.nome} (${p.match}%). Qual time você escolheria?`;
+  const texto = textoCompartilhar();
   try {
     if (navigator.canShare && estado.cardUrl) {
       const blob = await (await fetch(estado.cardUrl)).blob();
@@ -614,7 +906,8 @@ function baixarCard() {
   if (!estado.cardUrl) return aviso('O card ainda está sendo gerado.');
   const a = document.createElement('a');
   a.href = estado.cardUrl;
-  a.download = `prancheta-${estado.resultado.ranking[0].perfil.id}.png`;
+  const r = estado.resultado;
+  a.download = `prancheta-${r.modo === 'torcida' ? r.clube.id : r.ranking[0].perfil.id}.png`;
   document.body.appendChild(a);
   a.click();
   a.remove();
@@ -646,6 +939,50 @@ app.addEventListener('click', (ev) => {
     case 'avaliar':
       avaliarResultado(Number(el.dataset.nota));
       break;
+    case 'torcida-iniciar':
+      iniciarTorcida();
+      break;
+    case 'torcida-responder':
+      el.classList.add('sel');
+      setTimeout(() => responderTorcida(el.dataset.valor), 140);
+      break;
+    case 'torcida-voltar':
+      estado.torcida.historico.pop();
+      avancarTorcida();
+      break;
+    case 'torcida-chutar':
+      chutar();
+      break;
+    case 'palpite-sim':
+      resultadoTorcida(estado.torcida.palpite, true);
+      break;
+    case 'palpite-nao': {
+      const t = estado.torcida;
+      t.eliminados.add(t.palpite.id);
+      t.limite = Math.max(t.limite, t.historico.length + EXTRA_APOS_ERRO);
+      if (t.palpites >= MAX_PALPITES) render('escolher');
+      else avancarTorcida(true);
+      break;
+    }
+    case 'torcida-escolher': {
+      const clube = clubePorId(el.dataset.id);
+      registrarErroTorcida(clube);
+      resultadoTorcida(clube, false);
+      break;
+    }
+    case 'torcida-escolher-lista': {
+      const id = app.querySelector('#escolher-todos').value;
+      if (!id) break;
+      if (id === 'outro') {
+        registrarErroTorcida(null);
+        abrirFeedback({ tipo: 'melhoria', sobre: 'Modo torcida: meu time não está na lista' });
+        break;
+      }
+      const clube = clubePorId(id);
+      registrarErroTorcida(clube);
+      resultadoTorcida(clube, false);
+      break;
+    }
     case 'responder': {
       const q = estado.perguntas[estado.idx];
       const v = q.tipo === 'regiao' ? el.dataset.valor : Number(el.dataset.valor);
@@ -727,8 +1064,15 @@ document.addEventListener('error', (ev) => {
 }, true);
 
 document.addEventListener('keydown', (ev) => {
-  if (estado.tela !== 'quiz' || ev.altKey || ev.ctrlKey || ev.metaKey) return;
-  if (ev.target.matches('input, textarea') || document.querySelector('dialog[open]')) return;
+  if (ev.altKey || ev.ctrlKey || ev.metaKey) return;
+  if (ev.target.matches('input, textarea, select') || document.querySelector('dialog[open]')) return;
+  if (estado.tela === 'torcida') {
+    const botoes = app.querySelectorAll('[data-acao="torcida-responder"]');
+    const n = Number(ev.key);
+    if (n >= 1 && n <= botoes.length) botoes[n - 1].click();
+    return;
+  }
+  if (estado.tela !== 'quiz') return;
   const q = estado.perguntas[estado.idx];
   const n = Number(ev.key);
   if (q.tipo === 'escala' && n >= 1 && n <= 5) registrar(ESCALA[n - 1].v);
@@ -740,9 +1084,17 @@ document.addEventListener('keydown', (ev) => {
 
 function boot() {
   let code = null;
+  let torcida = null;
   try {
-    code = new URLSearchParams(location.search).get('r');
+    const params = new URLSearchParams(location.search);
+    code = params.get('r');
+    torcida = params.get('f');
   } catch { /* ignora */ }
+  if (torcida) {
+    const [id, n, ok] = torcida.split('.');
+    const clube = clubePorId(id);
+    if (clube) return resultadoTorcida(clube, ok === '1', true, Number(n) || 0);
+  }
   const dec = decodificar(code);
   if (dec) mostrarResultado(dec.modo, dec, true);
   else render('inicio', false);
