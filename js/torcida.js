@@ -6,7 +6,8 @@ import { CLUBES } from './data/times.js';
 // probabilidade de cada clube pela chance de alguém daquele clube responder aquilo. A próxima pergunta
 // é a que mais reduz a incerteza (entropia esperada). Dados desconhecidos (null) não pesam.
 
-export const MAX_PERGUNTAS = 20;
+// Modo fácil: pergunta até ter certeza. O teto só existe para não ficar infinito.
+export const MAX_PERGUNTAS = 40;
 export const EXTRA_APOS_ERRO = 6;
 export const MAX_PALPITES = 3;
 const CERTEZA_PARA_CHUTAR = 0.85;
@@ -88,6 +89,7 @@ const PROB_SN = 0.94;
 
 function verossimilhanca(q, clube, resposta) {
   if (resposta === null || resposta === undefined) return 1;
+  if (q.vero) return q.vero(clube, resposta);
   const t = q.valor(clube);
   if (t === null || t === undefined) return 1;
   if (q.tipo === 'sn') {
@@ -132,6 +134,12 @@ function perguntaDinamica(def, dist) {
   const candidatos = dist.filter((d) => d.p > 0.03 && d.clube[def.campo]).slice(0, 4);
   const valores = [...new Set(candidatos.map((d) => d.clube[def.campo]))];
   if (valores.length < 2) return null;
+  // Completa com valores de outros clubes para ter pelo menos 3 nomes (4 opções com "Nenhum desses").
+  const outros = dist.map((d) => d.clube[def.campo]).filter((v) => v && !valores.includes(v));
+  while (valores.length < 3 && outros.length) {
+    const v = outros.splice(Math.floor(Math.random() * outros.length), 1)[0];
+    if (!valores.includes(v)) valores.push(v);
+  }
   const opcoes = valores.sort(() => Math.random() - 0.5).map((v) => [v, v]);
   opcoes.push(['nenhum', 'Nenhum desses']);
   return cat(`din-${def.campo}`, def.tag, def.texto, opcoes, (c) => {
@@ -164,6 +172,141 @@ export function proximaPergunta(historico, eliminados) {
 export function horaDeChutar(historico, eliminados, limite) {
   const dist = posterior(historico, eliminados);
   return (dist[0].p >= CERTEZA_PARA_CHUTAR && historico.length >= MIN_PERGUNTAS) || historico.length >= limite;
+}
+
+// ---------------------------------------------------------------- Modo difícil
+// 15 perguntas sorteadas de um banco (sem escolher a próxima pela resposta anterior): um núcleo de
+// ações que sempre aparece, perguntas sorteadas e, no fim, duas perguntas montadas com os candidatos.
+
+export const TOTAL_DIFICIL = 15;
+const DINAMICAS_NO_FIM = 2;
+
+const DECADAS = Array.from({ length: 14 }, (_, i) => 1890 + i * 10);
+const gauss = (d, s) => Math.exp(-((d / s) ** 2));
+
+const ACOES_DIFICIL = [
+  {
+    id: 'mapa', tipo: 'cat', ui: 'mapa', tag: 'Mapa', texto: 'Toque no mapa: em que região fica a casa do seu time?',
+    opcoes: [['N', 'Norte'], ['NE', 'Nordeste'], ['CO', 'Centro-Oeste'], ['SE', 'Sudeste'], ['S', 'Sul']],
+    valor: (c) => REGIAO_UF[c.uf],
+  },
+  {
+    id: 'camisa', tipo: 'cores', ui: 'cores', tag: 'Camisa', texto: 'Pinte a camisa: escolha as cores do seu time (até 3).',
+    valor: (c) => c.cores,
+    vero: (c, r) => {
+      if (!c.cores || !r.length) return 1;
+      const inter = r.filter((x) => c.cores.includes(x)).length;
+      const uniao = new Set([...r, ...c.cores]).size;
+      return 0.04 + 0.96 * (inter / uniao) ** 1.5;
+    },
+    conc: (c, r) => {
+      if (!c.cores || !r.length) return null;
+      return r.filter((x) => c.cores.includes(x)).length / new Set([...r, ...c.cores]).size;
+    },
+  },
+  {
+    id: 'fundacao', tipo: 'slider', ui: 'ano', tag: 'História', texto: 'Arraste: em que época o seu time foi fundado?',
+    passos: DECADAS.map((d) => `${d}`), rotulos: ['Século XIX', 'Anos 2020'], unidade: 'década de fundação',
+    valor: (c) => c.fundacao,
+    vero: (c, v) => (c.fundacao ? 0.08 + 0.92 * gauss(c.fundacao - (decadaDe(v) + 5), 14) : 1),
+    conc: (c, v) => (c.fundacao ? gauss(c.fundacao - (decadaDe(v) + 5), 20) : null),
+  },
+  {
+    id: 'tamanho-torcida', tipo: 'slider', ui: 'tamanho', tag: 'Torcida', texto: 'Arraste: qual é o tamanho da torcida do seu time?',
+    rotulos: ['Pequena, todo mundo se conhece', 'Uma das maiores do país'],
+    valor: (c) => c.massa,
+    vero: (c, v) => 0.1 + 0.9 * gauss(c.massa - v * 100, 22),
+    conc: (c, v) => gauss(c.massa - v * 100, 30),
+  },
+];
+
+export const decadaDe = (v) => DECADAS[Math.round(v * (DECADAS.length - 1))];
+
+const NUCLEO_DIFICIL = ['serie', 'mascote-tipo'];
+
+function embaralhar(lista) {
+  const a = [...lista];
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [a[i], a[j]] = [a[j], a[i]];
+  }
+  return a;
+}
+
+// As 13 primeiras perguntas (as 2 últimas saem de perguntasFinaisDificil).
+export function montarDificil() {
+  const nucleo = [...ACOES_DIFICIL, ...PERGUNTAS.filter((q) => NUCLEO_DIFICIL.includes(q.id))];
+  // Fora do sorteio: o que o núcleo já cobre (região, cor principal) e perguntas de mascote específico.
+  const fora = new Set(['regiao', 'cor-principal', ...NUCLEO_DIFICIL]);
+  const resto = embaralhar(PERGUNTAS.filter((q) => !fora.has(q.id) && !q.id.startsWith('mascote-')));
+  const n = TOTAL_DIFICIL - DINAMICAS_NO_FIM;
+  return embaralhar([...nucleo, ...resto.slice(0, n - nucleo.length)]);
+}
+
+export function perguntasFinaisDificil(historico) {
+  const dist = posterior(historico);
+  const lista = [];
+  for (const def of embaralhar(DINAMICAS)) {
+    const q = perguntaDinamica(def, dist);
+    if (q) lista.push(q);
+    if (lista.length === DINAMICAS_NO_FIM) break;
+  }
+  // Se os candidatos não tiverem dados para isso, completa com perguntas do banco.
+  const feitas = new Set(historico.map((h) => h.pergunta.id));
+  const extras = embaralhar(PERGUNTAS.filter((q) => !feitas.has(q.id) && !q.id.startsWith('mascote-')));
+  while (lista.length < DINAMICAS_NO_FIM && extras.length) lista.push(extras.shift());
+  return lista;
+}
+
+// Concordância (0 a 1) entre uma resposta e um clube; null quando não dá para comparar.
+function concordancia(q, clube, resposta) {
+  if (resposta === null || resposta === undefined) return null;
+  if (q.conc) return q.conc(clube, resposta);
+  const t = q.valor(clube);
+  if (t === null || t === undefined) return null;
+  if (q.tipo === 'sn') return 1 - Math.abs(resposta - (t ? 1 : 0));
+  return t === resposta ? 1 : 0;
+}
+
+// Ranking final: ordem pela probabilidade, % pela concordância média (com um leve puxão para 50%
+// em clubes com poucos dados, para não darem 100% por acaso).
+export function ranquearTorcida(historico) {
+  return posterior(historico).map(({ clube, p }) => {
+    let soma = 1;
+    let n = 2;
+    for (const { pergunta, resposta } of historico) {
+      const c = concordancia(pergunta, clube, resposta);
+      if (c === null) continue;
+      soma += c;
+      n += 1;
+    }
+    return { clube, p, match: Math.round((100 * soma) / n) };
+  });
+}
+
+// Rival direto de cada clube (quando o rival está na base).
+export const RIVAL = {
+  flamengo: 'vasco', vasco: 'flamengo', fluminense: 'flamengo', botafogo: 'flamengo',
+  palmeiras: 'corinthians', corinthians: 'palmeiras', saopaulo: 'corinthians', santos: 'corinthians',
+  cruzeiro: 'atletico', atletico: 'cruzeiro', 'america-mg': 'atletico',
+  gremio: 'inter', inter: 'gremio', athletico: 'coritiba', coritiba: 'athletico',
+  bahia: 'vitoria', vitoria: 'bahia', remo: 'paysandu', paysandu: 'remo', 'tuna-luso': 'remo',
+  ceara: 'fortaleza', fortaleza: 'ceara', ferroviario: 'ceara',
+  sport: 'nautico', nautico: 'sport', 'santa-cruz': 'sport',
+  goias: 'vila-nova', 'vila-nova': 'goias', 'atletico-go': 'goias',
+  avai: 'figueirense', figueirense: 'avai', criciuma: 'figueirense', chapecoense: 'figueirense',
+  'ponte-preta': 'guarani', guarani: 'ponte-preta', crb: 'csa', csa: 'crb', asa: 'csa',
+  abc: 'america-rn', 'america-rn': 'abc', 'sampaio-correa': 'moto-club', 'moto-club': 'sampaio-correa', maranhao: 'sampaio-correa',
+  juventude: 'caxias', caxias: 'juventude', brasiliense: 'gama', gama: 'brasiliense',
+  confianca: 'sergipe', sergipe: 'confianca', itabaiana: 'confianca', 'botafogo-pb': 'treze', treze: 'botafogo-pb',
+  londrina: 'operario-pr', 'operario-pr': 'londrina',
+};
+
+export function opostoDe(top, ranking) {
+  const rival = RIVAL[top.id] && ranking.find((r) => r.clube.id === RIVAL[top.id]);
+  if (rival) return { ...rival, rival: true };
+  const menor = [...ranking].sort((a, b) => a.match - b.match)[0];
+  return { ...menor, rival: false };
 }
 
 // ---------------------------------------------------------------- Apresentação

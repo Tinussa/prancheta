@@ -8,8 +8,9 @@ import { gerarCard } from './card.js';
 import { escudoSVG } from './escudos.js';
 import { abrirFeedback, enviarAvaliacao } from './feedback.js';
 import {
-  CLUBES_TORCIDA, RESPOSTAS_SN, MAX_PERGUNTAS, EXTRA_APOS_ERRO, MAX_PALPITES,
+  CLUBES_TORCIDA, RESPOSTAS_SN, EXTRA_APOS_ERRO, MAX_PALPITES, MAX_PERGUNTAS, TOTAL_DIFICIL,
   posterior, proximaPergunta, horaDeChutar, escudoDoClube, titulosDoClube, clubePorId,
+  montarDificil, perguntasFinaisDificil, ranquearTorcida, opostoDe, decadaDe, RIVAL,
 } from './torcida.js';
 import { gerarCardTorcida } from './card.js';
 
@@ -41,6 +42,7 @@ const estado = {
   cardUrl: null,
   // modo torcida
   torcida: null, // { historico: [{ pergunta, resposta, rotulo }], atual, eliminados: Set, palpites, limite, palpite }
+  dificil: null, // { perguntas, idx, historico, rascunho }
 };
 
 const esc = (s) => String(s).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]);
@@ -108,10 +110,13 @@ function telaInicio() {
           <h2>Para qual time você torce?</h2>
           <p>Responda sobre cores, mascote, títulos, estádio e rivais. A Prancheta tenta adivinhar o seu time de coração entre clubes das Séries A, B, C e D.</p>
           <div class="tema">
-            <p class="tema-cab"><b>Adivinhação</b><span>Cada resposta escolhe a próxima pergunta</span></p>
-            <div class="versoes versoes-uma">
+            <p class="tema-cab"><b>Escolha a dificuldade</b><span>Fácil adivinha; difícil é quiz</span></p>
+            <div class="versoes">
               <button class="versao versao-forte" data-acao="torcida-iniciar">
-                <b>Começar</b><span>até ${MAX_PERGUNTAS} perguntas</span>
+                <b>Modo fácil</b><span>Perguntas até acertar</span>
+              </button>
+              <button class="versao" data-acao="dificil-iniciar">
+                <b>Modo difícil</b><span>${TOTAL_DIFICIL} perguntas · quiz e ações</span>
               </button>
             </div>
           </div>
@@ -637,8 +642,19 @@ function telaEscolher() {
     ${rodape()}`;
 }
 
+function itemClube(r, extra = '') {
+  return `
+    <li class="rank-item">
+      ${escudoSVG(escudoDoClube(r.clube))}
+      <span class="rank-nome"><b>${esc(r.clube.nome)}</b><small>${esc(r.clube.cidade)} · ${esc(r.clube.uf)}${extra}</small></span>
+      <span class="rank-pct tabnum">${r.match}%</span>
+      <i class="rank-barra" style="--w:${r.match}%" aria-hidden="true"></i>
+    </li>`;
+}
+
 function telaResultadoTorcida() {
-  const { clube: c, acertou, perguntas, compartilhado } = estado.resultado;
+  const { clube: c, acertou, perguntas, compartilhado, variante, match, similares, oposto } = estado.resultado;
+  const dificil = variante === 'dificil';
   const fatos = [
     ['Cidade', `${c.cidade} (${c.uf})`],
     ['Divisão em 2026', `Série ${c.serie}`],
@@ -651,16 +667,42 @@ function telaResultadoTorcida() {
     ['Grandes títulos', titulosDoClube(c).join(', ')],
   ].filter(([, v]) => v);
   const frase = compartilhado
-    ? 'Resultado compartilhado'
-    : acertou
-      ? `A Prancheta acertou em ${perguntas} pergunta${perguntas === 1 ? '' : 's'}`
-      : 'Dessa vez a Prancheta errou. Obrigado por ensinar!';
+    ? `Resultado compartilhado${dificil ? ' · modo difícil' : ''}`
+    : dificil
+      ? `Modo difícil: ${TOTAL_DIFICIL} perguntas, sem chute no meio do caminho.`
+      : acertou
+        ? `A Prancheta acertou em ${perguntas} pergunta${perguntas === 1 ? '' : 's'}`
+        : 'Dessa vez a Prancheta errou. Obrigado por ensinar!';
+  const placar = dificil
+    ? `<div class="res-placar" aria-label="${match}% compatível"><span class="res-pct tabnum">${match}<small>%</small></span><span class="res-pct-rot">compatível</span></div>`
+    : !compartilhado && acertou
+      ? `<div class="res-placar" aria-label="Acertou em ${perguntas} perguntas"><span class="res-pct tabnum">${perguntas}</span><span class="res-pct-rot">pergunta${perguntas === 1 ? '' : 's'}</span></div>`
+      : '';
+  const comparacao = dificil && (similares?.length || oposto) ? `
+      <section class="bloco wrap">
+        <div class="res-colunas">
+          ${similares?.length ? `<div class="res-rank">
+            <h2>Também combinam com você</h2>
+            <ol class="rank rank-torcida">${similares.map((r) => itemClube(r)).join('')}</ol>
+          </div>` : ''}
+          ${oposto ? `<div class="res-rank">
+            <div class="oposto">
+              <p class="eyebrow">${oposto.rival ? 'Seu oposto: o rival direto' : 'Seu oposto'}</p>
+              <div class="oposto-in">
+                ${escudoSVG(escudoDoClube(oposto.clube))}
+                <span class="rank-nome"><b>${esc(oposto.clube.nome)}</b><small>${oposto.rival ? `O maior rival do ${esc(c.nome)}` : 'O clube mais diferente das suas respostas'}</small></span>
+                ${oposto.match !== undefined ? `<span class="rank-pct tabnum">${oposto.match}%</span>` : ''}
+              </div>
+            </div>
+          </div>` : ''}
+        </div>
+      </section>` : '';
   return `
     ${topo()}
     <main class="resultado">
       <section class="res-hero wrap">
         <div class="res-txt">
-          <p class="eyebrow">Você torce para</p>
+          <p class="eyebrow">${dificil ? 'Pelas suas respostas, você torce para' : 'Você torce para'}</p>
           <div class="res-nome-linha">
             <figure class="res-retrato">${escudoSVG(escudoDoClube(c), 'escudo escudo-g')}</figure>
             <h1>${esc(c.nome)}</h1>
@@ -668,12 +710,9 @@ function telaResultadoTorcida() {
           <p class="res-meta">${esc(c.cidade)} · ${esc(c.uf)} <span class="pill">Série ${c.serie} em 2026</span></p>
           <p class="res-estilo">${esc(frase)}</p>
         </div>
-        ${!compartilhado && acertou ? `<div class="res-placar" aria-label="Acertou em ${perguntas} perguntas">
-          <span class="res-pct tabnum">${perguntas}</span>
-          <span class="res-pct-rot">pergunta${perguntas === 1 ? '' : 's'}</span>
-        </div>` : ''}
+        ${placar}
       </section>
-
+${comparacao}
       <section class="bloco wrap">
         <div class="bloco-cab"><h2>Ficha do clube</h2></div>
         <dl class="ficha">
@@ -696,13 +735,15 @@ function telaResultadoTorcida() {
           </div>
           <p class="aviso" id="aviso" role="status"></p>
           <div class="botoes botoes-fim">
-            <button class="btn-sec" data-acao="torcida-iniciar">Jogar de novo</button>
+            <button class="btn-sec" data-acao="${dificil ? 'dificil-iniciar' : 'torcida-iniciar'}">Jogar de novo</button>
+            <button class="btn-sec" data-acao="${dificil ? 'torcida-iniciar' : 'dificil-iniciar'}">Tentar o modo ${dificil ? 'fácil' : 'difícil'}</button>
             <button class="btn-link" data-acao="iniciar" data-modo="time" data-versao="curta" data-tema="futebol">Descobrir que time você escolheria pelo estilo</button>
           </div>
         </div>
       </section>
 
       <section class="wrap res-correcao">
+        ${dificil && !compartilhado ? `<button class="btn-link reportar" data-acao="feedback" data-tipo="correcao" data-sobre="Modo difícil errou: deu ${esc(c.nome)}">Não torço para ${esc(c.nome)}? Conte qual é o seu time</button>` : ''}
         <button class="btn-link reportar" data-acao="feedback" data-tipo="correcao" data-sobre="Modo torcida: ${esc(c.nome)} (${esc(c.id)})">Algo errado sobre ${esc(c.nome)}? Corrigir informação</button>
       </section>
     </main>
@@ -760,6 +801,158 @@ function resultadoTorcida(clube, acertou, compartilhado = false, perguntas = est
   });
 }
 
+// ---------------------------------------------------------------- Modo torcida difícil
+
+const COR_HEX = { vermelho: '#d6202a', preto: '#111111', branco: '#ffffff', verde: '#00843d', azul: '#1f4fa3', amarelo: '#f7d117', grena: '#7a0026' };
+const COR_NOME = { vermelho: 'Vermelho', preto: 'Preto', branco: 'Branco', verde: 'Verde', azul: 'Azul', amarelo: 'Amarelo', grena: 'Grená' };
+
+// Mapa estilizado do Brasil por região (viewBox 100 × 100).
+const REGIOES_MAPA = [
+  ['N', 'Norte', '8,22 30,8 54,10 62,24 58,42 40,48 22,46 8,36', 32, 28],
+  ['NE', 'Nordeste', '62,24 74,18 92,30 96,42 86,54 72,60 64,52 58,42', 78, 38],
+  ['CO', 'Centro-Oeste', '22,46 40,48 58,42 64,52 62,66 50,72 36,64 26,56', 44, 57],
+  ['SE', 'Sudeste', '62,66 64,52 72,60 86,54 82,68 72,78 60,80 50,72', 69, 68],
+  ['S', 'Sul', '50,72 60,80 56,92 48,98 42,90 44,78', 51, 86],
+];
+
+function mapaSVG(sel) {
+  return `<svg class="mapa" viewBox="0 0 100 100" role="img" aria-label="Mapa do Brasil por região">
+    ${REGIOES_MAPA.map(([id, nome, pts, x, y]) => `
+      <g class="regiao${sel === id ? ' sel' : ''}" data-acao="dificil-rascunho" data-valor="${id}">
+        <polygon points="${pts}"/>
+        <text x="${x}" y="${y}">${nome}</text>
+      </g>`).join('')}
+  </svg>`;
+}
+
+function camisaSVG(cores) {
+  const lista = cores.length ? cores.map((c) => COR_HEX[c]) : ['#2a3b33'];
+  const w = 100 / lista.length;
+  return `<svg class="camisa" viewBox="0 0 100 100" aria-hidden="true">
+    <defs><clipPath id="camisa-clip"><path d="M30 12 L42 8 Q50 15 58 8 L70 12 L90 26 L81 41 L72 35 L72 93 L28 93 L28 35 L19 41 L10 26 Z"/></clipPath></defs>
+    <g clip-path="url(#camisa-clip)">${lista.map((c, i) => `<rect x="${i * w}" y="0" width="${w + 0.5}" height="100" fill="${c}"/>`).join('')}</g>
+    <path d="M30 12 L42 8 Q50 15 58 8 L70 12 L90 26 L81 41 L72 35 L72 93 L28 93 L28 35 L19 41 L10 26 Z" fill="none" stroke="rgba(238,242,234,0.6)" stroke-width="1.2"/>
+  </svg>`;
+}
+
+function rotuloTamanho(v) {
+  if (v < 0.2) return 'Pequena';
+  if (v < 0.45) return 'Média';
+  if (v < 0.7) return 'Grande';
+  if (v < 0.9) return 'Muito grande';
+  return 'Gigante';
+}
+
+function sliderDificilVisual(q, v) {
+  const valor = q.ui === 'ano' ? `${decadaDe(v)}` : rotuloTamanho(v);
+  const legenda = q.ui === 'ano' ? 'década de fundação' : 'torcida';
+  return `<div class="numero-grande"><span class="tabnum">${valor}</span><small>${legenda}</small></div>`;
+}
+
+function telaDificil() {
+  const d = estado.dificil;
+  const q = d.perguntas[d.idx];
+  const resp = d.historico[d.idx];
+  if (d.rascunho === null) {
+    if (q.ui === 'cores') d.rascunho = resp ? [...resp.resposta] : [];
+    else if (q.tipo === 'slider') d.rascunho = resp ? resp.resposta : 0.5;
+    else if (q.ui === 'mapa' && resp) d.rascunho = resp.resposta;
+  }
+  const acao = ['mapa', 'cores'].includes(q.ui) || q.tipo === 'slider';
+  let corpo = '';
+  if (q.tipo === 'sn') {
+    corpo = `<div class="escala escala-sn">${RESPOSTAS_SN.map((r, i) => `
+      <button class="op-escala" data-acao="dificil-responder" data-valor="${r.id}" data-nivel="${i}"><i aria-hidden="true"></i><span>${r.texto}</span></button>`).join('')}</div>`;
+  } else if (q.ui === 'mapa') {
+    corpo = `<div class="acao-mapa">${mapaSVG(d.rascunho)}
+      <div class="formacoes">${q.opcoes.map(([id, nome]) => `<button class="chip-form${d.rascunho === id ? ' sel' : ''}" data-acao="dificil-rascunho" data-valor="${id}">${nome}</button>`).join('')}</div></div>`;
+  } else if (q.ui === 'cores') {
+    corpo = `<div class="acao-camisa">${camisaSVG(d.rascunho)}
+      <div class="cores-grade">${Object.keys(COR_HEX).map((c) => `
+        <button class="chip-cor${d.rascunho.includes(c) ? ' sel' : ''}" data-acao="dificil-cor" data-valor="${c}" style="--cor:${COR_HEX[c]}" aria-pressed="${d.rascunho.includes(c)}">
+          <i aria-hidden="true"></i>${COR_NOME[c]}</button>`).join('')}</div>
+      <p class="campo-legenda">${d.rascunho.length ? `${d.rascunho.length} de 3 cores` : 'Toque nas cores para pintar a camisa'}</p></div>`;
+  } else if (q.tipo === 'slider') {
+    const step = q.ui === 'ano' ? 1 / 13 : 0.01;
+    corpo = `<div class="acao-slider">${sliderDificilVisual(q, d.rascunho)}
+      <input type="range" id="dificil-${q.id}" class="slider" min="0" max="1" step="${step}" value="${d.rascunho}" aria-label="${esc(q.texto)}" data-acao="dificil-slider">
+      <div class="slider-rotulos"><span>${esc(q.rotulos[0])}</span><span>${esc(q.rotulos[1])}</span></div></div>`;
+  } else {
+    corpo = `<div class="opcoes">${q.opcoes.map(([id, texto], i) => `
+      <button class="op" data-acao="dificil-responder" data-valor="${esc(id)}"><span class="op-letra">${'ABCDEFGH'[i]}</span><span>${esc(texto)}</span></button>`).join('')}
+      <button class="op op-neutra" data-acao="dificil-responder" data-valor="nao-sei"><span class="op-letra">?</span><span>Não sei</span></button></div>`;
+  }
+  const pronto = q.ui === 'cores' ? d.rascunho.length > 0 : d.rascunho !== null;
+  return `
+    <div class="placar">
+      <div class="wrap placar-in">
+        <button class="placar-sair" data-acao="inicio" aria-label="Sair do jogo">✕</button>
+        <span class="placar-modo">Torcida · Difícil</span>
+        <span class="placar-min tabnum">${num(Math.round((d.idx / TOTAL_DIFICIL) * 90))}'</span>
+        <div class="placar-barra" role="progressbar" aria-valuemin="0" aria-valuemax="${TOTAL_DIFICIL}" aria-valuenow="${d.idx}"><i style="width:${(d.idx / TOTAL_DIFICIL) * 100}%"></i></div>
+        <span class="placar-cont tabnum">${num(d.idx + 1)}/${TOTAL_DIFICIL}</span>
+      </div>
+    </div>
+    <main class="quiz wrap">
+      <article class="pergunta" data-tipo="dificil-${q.ui || q.tipo}">
+        <p class="tag">${esc(q.tag)}</p>
+        <h1 class="pergunta-txt">${esc(q.texto)}</h1>
+        <div class="resposta">${corpo}</div>
+        <div class="quiz-nav">
+          <button class="btn-sec" data-acao="dificil-voltar" ${d.idx === 0 ? 'disabled' : ''}>← Voltar</button>
+          ${acao ? `<button class="btn-pri" data-acao="dificil-confirmar" ${pronto ? '' : 'disabled'}>Confirmar →</button>` : ''}
+        </div>
+        <button class="btn-link reportar" data-acao="feedback" data-tipo="correcao" data-sobre="Modo torcida difícil, pergunta: ${esc(q.texto)}">Reportar problema nesta pergunta</button>
+      </article>
+    </main>`;
+}
+
+function iniciarDificil() {
+  estado.modo = 'torcida';
+  estado.dificil = { perguntas: montarDificil(), idx: 0, historico: [], rascunho: null };
+  limparUrl();
+  render('dificil');
+}
+
+function registrarDificil(resposta, valor) {
+  const d = estado.dificil;
+  d.historico[d.idx] = { pergunta: d.perguntas[d.idx], resposta, valor };
+  d.historico.length = d.idx + 1;
+  d.rascunho = null;
+  d.idx += 1;
+  if (d.idx === d.perguntas.length && d.perguntas.length < TOTAL_DIFICIL) {
+    d.perguntas.push(...perguntasFinaisDificil(d.historico));
+  }
+  if (d.idx >= d.perguntas.length) return finalizarDificil();
+  render('dificil', false);
+}
+
+function finalizarDificil() {
+  const ranking = ranquearTorcida(estado.dificil.historico);
+  const top = ranking[0];
+  const similares = ranking.slice(1, 12).sort((a, b) => b.match - a.match).slice(0, 5);
+  const oposto = opostoDe(top.clube, ranking);
+  mostrarResultadoDificil(top.clube, top.match, similares, oposto, false);
+}
+
+function mostrarResultadoDificil(clube, match, similares, oposto, compartilhado) {
+  estado.modo = 'torcida';
+  estado.resultado = { modo: 'torcida', variante: 'dificil', clube, match, similares, oposto, compartilhado, perguntas: TOTAL_DIFICIL, acertou: null };
+  estado.cardUrl = null;
+  render('resultadoTorcida');
+  try {
+    if (!compartilhado) history.replaceState(null, '', `?d=${clube.id}.${match}`);
+  } catch { /* ignora */ }
+  gerarCardTorcida(estado.resultado).then((url) => {
+    estado.cardUrl = url;
+    const box = app.querySelector('.card-preview');
+    if (box) box.innerHTML = `<img src="${url}" alt="Card: eu torço para ${esc(clube.nome)}">`;
+  }).catch(() => {
+    const box = app.querySelector('.card-preview');
+    if (box) box.innerHTML = '<div class="card-carregando">Não foi possível gerar o card neste navegador.</div>';
+  });
+}
+
 // Quando a Prancheta erra, o relato vai para o feedback para corrigir a base.
 function registrarErroTorcida(real) {
   const t = estado.torcida;
@@ -783,6 +976,7 @@ const TELAS = {
   torcida: () => telaTorcida(),
   palpite: () => telaPalpite(),
   escolher: () => telaEscolher(),
+  dificil: () => telaDificil(),
   resultadoTorcida: () => telaResultadoTorcida(),
 };
 
@@ -854,12 +1048,16 @@ function aviso(txt) {
 
 function linkResultado() {
   const r = estado.resultado;
+  if (r.variante === 'dificil') return `${location.origin}${location.pathname}?d=${r.clube.id}.${r.match}`;
   if (r.modo === 'torcida') return `${location.origin}${location.pathname}?f=${r.clube.id}.${r.perguntas}.${r.acertou ? 1 : 0}`;
   return `${location.origin}${location.pathname}?r=${codificar(r.modo, r.user)}`;
 }
 
 function textoCompartilhar() {
   const r = estado.resultado;
+  if (r.variante === 'dificil') {
+    return `No modo difícil da Prancheta, deu ${r.clube.nome} (${r.match}% compatível)${r.oposto?.rival ? ` e o meu oposto é o ${r.oposto.clube.nome}` : ''}. Para qual time você torce?`;
+  }
   if (r.modo === 'torcida') {
     return r.acertou
       ? `A Prancheta descobriu em ${r.perguntas} perguntas que eu torço para ${r.clube.nome}. Será que ela adivinha o seu time?`
@@ -942,6 +1140,45 @@ app.addEventListener('click', (ev) => {
     case 'torcida-iniciar':
       iniciarTorcida();
       break;
+    case 'dificil-iniciar':
+      iniciarDificil();
+      break;
+    case 'dificil-responder': {
+      const q = estado.dificil.perguntas[estado.dificil.idx];
+      const v = el.dataset.valor;
+      const resposta = q.tipo === 'sn' ? RESPOSTAS_SN.find((r) => r.id === v).v : v === 'nao-sei' ? null : v;
+      el.classList.add('sel');
+      setTimeout(() => registrarDificil(resposta, v), 140);
+      break;
+    }
+    case 'dificil-rascunho':
+      estado.dificil.rascunho = el.dataset.valor;
+      render('dificil', false);
+      break;
+    case 'dificil-cor': {
+      const d = estado.dificil;
+      const c = el.dataset.valor;
+      if (d.rascunho.includes(c)) d.rascunho = d.rascunho.filter((x) => x !== c);
+      else if (d.rascunho.length < 3) d.rascunho = [...d.rascunho, c];
+      render('dificil', false);
+      break;
+    }
+    case 'dificil-confirmar': {
+      const d = estado.dificil;
+      const q = d.perguntas[d.idx];
+      const r = q.ui === 'cores' ? [...d.rascunho] : d.rascunho;
+      registrarDificil(r, Array.isArray(r) ? r.join('+') : String(r));
+      break;
+    }
+    case 'dificil-voltar': {
+      const d = estado.dificil;
+      if (d.idx === 0) break;
+      d.idx -= 1;
+      d.rascunho = null;
+      if (d.perguntas.length > TOTAL_DIFICIL - 2 && d.idx < TOTAL_DIFICIL - 2) d.perguntas.length = TOTAL_DIFICIL - 2;
+      render('dificil', false);
+      break;
+    }
     case 'torcida-responder':
       el.classList.add('sel');
       setTimeout(() => responderTorcida(el.dataset.valor), 140);
@@ -1019,6 +1256,12 @@ app.addEventListener('click', (ev) => {
 });
 
 app.addEventListener('input', (ev) => {
+  if (ev.target.dataset.acao === 'dificil-slider') {
+    const d = estado.dificil;
+    d.rascunho = Number(ev.target.value);
+    app.querySelector('.numero-grande').outerHTML = sliderDificilVisual(d.perguntas[d.idx], d.rascunho);
+    return;
+  }
   if (ev.target.dataset.acao !== 'slider') return;
   atualizarSlider(Number(ev.target.value), false);
 });
@@ -1066,8 +1309,8 @@ document.addEventListener('error', (ev) => {
 document.addEventListener('keydown', (ev) => {
   if (ev.altKey || ev.ctrlKey || ev.metaKey) return;
   if (ev.target.matches('input, textarea, select') || document.querySelector('dialog[open]')) return;
-  if (estado.tela === 'torcida') {
-    const botoes = app.querySelectorAll('[data-acao="torcida-responder"]');
+  if (estado.tela === 'torcida' || estado.tela === 'dificil') {
+    const botoes = app.querySelectorAll('[data-acao="torcida-responder"], [data-acao="dificil-responder"]');
     const n = Number(ev.key);
     if (n >= 1 && n <= botoes.length) botoes[n - 1].click();
     return;
@@ -1089,6 +1332,15 @@ function boot() {
     const params = new URLSearchParams(location.search);
     code = params.get('r');
     torcida = params.get('f');
+    const dificil = params.get('d');
+    if (dificil) {
+      const [id, m] = dificil.split('.');
+      const clube = clubePorId(id);
+      if (clube) {
+        const rival = RIVAL[clube.id] && clubePorId(RIVAL[clube.id]);
+        return mostrarResultadoDificil(clube, Math.min(99, Number(m) || 0), [], rival ? { clube: rival, rival: true } : null, true);
+      }
+    }
   } catch { /* ignora */ }
   if (torcida) {
     const [id, n, ok] = torcida.split('.');

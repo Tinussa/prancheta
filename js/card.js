@@ -260,7 +260,8 @@ function rodape(ctx, chamada) {
 const paraUrl = (cv) => new Promise((ok, erro) => cv.toBlob((b) => (b ? ok(URL.createObjectURL(b)) : erro(new Error('toBlob'))), 'image/png'));
 
 // Card do modo torcida: escudo, "eu torço para", quantas perguntas a Prancheta precisou e a ficha do clube.
-export async function gerarCardTorcida({ clube: c, acertou, perguntas }) {
+export async function gerarCardTorcida({ clube: c, acertou, perguntas, variante, match, oposto }) {
+  const dificil = variante === 'dificil';
   await carregarFontes();
   const cv = document.createElement('canvas');
   cv.width = W;
@@ -276,7 +277,7 @@ export async function gerarCardTorcida({ clube: c, acertou, perguntas }) {
   ctx.fillStyle = COR.suave;
   ctx.font = `600 30px ${ROTULO}`;
   ctx.textAlign = 'right';
-  ctx.fillText('PARA QUAL TIME VOCÊ TORCE?', W - M, 146);
+  ctx.fillText(dificil ? 'PARA QUAL TIME VOCÊ TORCE? · DIFÍCIL' : 'PARA QUAL TIME VOCÊ TORCE?', W - M, 146);
   ctx.textAlign = 'center';
 
   // escudo
@@ -316,7 +317,12 @@ export async function gerarCardTorcida({ clube: c, acertou, perguntas }) {
   ctx.fillStyle = COR.amarelo;
   ctx.fillRect(M, y, W - 2 * M, 190);
   ctx.fillStyle = '#1a1400';
-  if (acertou && perguntas) {
+  if (dificil) {
+    ctx.font = `700 40px ${ROTULO}`;
+    ctx.fillText(`MODO DIFÍCIL · ${perguntas} PERGUNTAS`, W / 2, y + 54);
+    ctx.font = `900 98px ${DISPLAY}`;
+    ctx.fillText(`${match}% COMPATÍVEL`, W / 2, y + 170);
+  } else if (acertou && perguntas) {
     ctx.font = `700 40px ${ROTULO}`;
     ctx.fillText('A PRANCHETA ADIVINHOU EM', W / 2, y + 62);
     ctx.font = `900 110px ${DISPLAY}`;
@@ -333,7 +339,8 @@ export async function gerarCardTorcida({ clube: c, acertou, perguntas }) {
   ctx.textAlign = 'left';
   const ficha = [
     ['ESTÁDIO', c.estadio], ['MASCOTE', c.mascote], ['FUNDAÇÃO', c.fundacao],
-    ['MAIOR RIVAL', c.rival], ['DIVISÃO EM 2026', `Série ${c.serie}`], ['ÍDOLO', c.idolo],
+    dificil && oposto ? ['MEU OPOSTO', oposto.clube.nome] : ['MAIOR RIVAL', c.rival],
+    ['DIVISÃO EM 2026', `Série ${c.serie}`], ['ÍDOLO', c.idolo],
   ].filter(([, v]) => v).slice(0, 4);
   const colW = (W - 2 * M) / 2;
   ficha.forEach(([k, v], i) => {

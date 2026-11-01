@@ -264,6 +264,25 @@ p { margin: 0; }
 .ficha dt { font: 600 0.8rem/1.2 var(--f-label); letter-spacing: 0.12em; text-transform: uppercase; color: var(--muted); }
 .ficha dd { margin: 0; font: 800 1.3rem/1.15 var(--f-display); text-transform: uppercase; }
 
+/* modo torcida difícil */
+.rank-torcida .rank-item { grid-template-columns: auto minmax(0, 1fr) auto; }
+.acao-mapa, .acao-camisa { display: grid; gap: 14px; justify-items: start; }
+.mapa { width: 100%; max-width: 420px; height: auto; }
+.mapa .regiao { cursor: pointer; }
+.mapa .regiao polygon { fill: var(--grass-a); stroke: var(--chalk); stroke-width: 0.6; transition: fill 0.15s ease; }
+.mapa .regiao:hover polygon { fill: var(--grass-b); stroke: var(--accent); }
+.mapa .regiao.sel polygon { fill: var(--accent); stroke: var(--accent); }
+.mapa .regiao text { font: 700 4.2px var(--f-label); letter-spacing: 0.04em; fill: var(--fg); text-anchor: middle; pointer-events: none; text-transform: uppercase; }
+.mapa .regiao.sel text { fill: var(--accent-ink); }
+.camisa { width: 160px; height: 160px; }
+.cores-grade { display: flex; flex-wrap: wrap; gap: 8px; }
+.chip-cor {
+  display: inline-flex; align-items: center; gap: 8px; padding: 9px 12px; border-radius: 3px;
+  background: var(--surface); border: 1px solid var(--line); font: 700 1rem/1 var(--f-label); letter-spacing: 0.04em;
+}
+.chip-cor i { width: 16px; height: 16px; border-radius: 50%; background: var(--cor); outline: 1px solid var(--muted); }
+.chip-cor.sel { border-color: var(--accent); background: var(--surface-2); box-shadow: inset 0 -3px 0 var(--accent); }
+
 /* janela de feedback */
 .feedback {
   width: min(560px, calc(100vw - 32px));
