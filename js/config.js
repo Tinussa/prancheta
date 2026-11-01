@@ -7,6 +7,6 @@
 //
 // Com os dois vazios, o site mostra o relato pronto para copiar.
 export const FEEDBACK = {
-  endpoint: '',
+  endpoint: 'https://formspree.io/f/mdeewvrp',
   email: '',
 };
