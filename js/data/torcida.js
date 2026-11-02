@@ -1,4 +1,4 @@
-// Clubes do modo "Para qual time você torce?": Séries A, B e C de 2026 e tradicionais da Série D.
+// Clubes do modo "Qual time você está pensando?": Séries A, B e C de 2026 e tradicionais da Série D.
 //
 // Campos (null = não temos certeza; a pergunta não pesa a favor nem contra o clube):
 //   uf, cidade, serie ('A' a 'D' em 2026), capital, litoral (cidade com praia)

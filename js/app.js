@@ -10,7 +10,7 @@ import { abrirFeedback, enviarAvaliacao } from './feedback.js';
 import {
   CLUBES_TORCIDA, RESPOSTAS_SN, EXTRA_APOS_ERRO, MAX_PALPITES, MAX_PERGUNTAS, TOTAL_DIFICIL,
   posterior, proximaPergunta, horaDeChutar, escudoDoClube, titulosDoClube, clubePorId,
-  montarDificil, perguntasFinaisDificil, ranquearTorcida, opostoDe, idadeDe, PASSOS_IDADE, RIVAL,
+  montarDificil, perguntasFinaisDificil, ranquearTorcida, opostoDe, RIVAL,
 } from './torcida.js';
 import { gerarCardTorcida } from './card.js';
 
@@ -19,7 +19,7 @@ const app = document.getElementById('app');
 const MODOS = {
   treinador: { rotulo: 'Qual treinador você seria?', curto: 'Treinador', num: 1 },
   time: { rotulo: 'Qual time você escolheria?', curto: 'Time', num: 2 },
-  torcida: { rotulo: 'Para qual time você torce?', curto: 'Torcida', num: 3 },
+  torcida: { rotulo: 'Qual time você está pensando?', curto: 'Adivinhação', num: 3 },
 };
 
 const ESCALA = [
@@ -104,11 +104,11 @@ function telaInicio() {
         <article class="modo modo-torcida">
           <div class="modo-bug">
             <span class="bug-n">3</span>
-            <span class="bug-t">Modo torcida</span>
+            <span class="bug-t">Modo adivinhação</span>
             <span class="bug-q">${CLUBES_TORCIDA.length} clubes</span>
           </div>
-          <h2>Para qual time você torce?</h2>
-          <p>Responda sobre cores, mascote, títulos, estádio e rivais. A Prancheta tenta adivinhar o seu time de coração entre clubes das Séries A, B, C e D.</p>
+          <h2>Qual time você está pensando?</h2>
+          <p>Pense em um clube das Séries A, B, C ou D. Responda sobre história, títulos, torcida, comunidade e rivais, e a Prancheta tenta adivinhar.</p>
           <div class="tema">
             <p class="tema-cab"><b>Escolha a dificuldade</b><span>Fácil adivinha; difícil é quiz</span></p>
             <div class="versoes">
@@ -599,7 +599,7 @@ function telaPalpite() {
       <div class="palpite-cartao">
         ${escudoSVG(escudoDoClube(c), 'escudo escudo-g')}
         <div class="palpite-txt">
-          <p class="palpite-pergunta">Você torce para…</p>
+          <p class="palpite-pergunta">Você está pensando em…</p>
           <h1>${esc(c.nome)}?</h1>
           <p class="res-meta">${esc(c.cidade)} · ${esc(c.uf)}${c.apelido ? ` · ${esc(c.apelido)}` : ''}</p>
         </div>
@@ -620,7 +620,7 @@ function telaEscolher() {
     ${topo()}
     <main class="quiz wrap escolher">
       <p class="eyebrow">Dessa vez você venceu</p>
-      <h1 class="pergunta-txt">Não consegui adivinhar. Para qual time você torce?</h1>
+      <h1 class="pergunta-txt">Não consegui adivinhar. Em qual time você estava pensando?</h1>
       <p class="lead">Sua resposta ajuda a Prancheta a acertar da próxima vez.</p>
       <div class="escolher-grade">
         ${sugestoes.map(({ clube }) => `
@@ -630,7 +630,7 @@ function telaEscolher() {
       </div>
       <label class="fb-campo escolher-select" for="escolher-todos">Ou procure na lista
         <select id="escolher-todos">
-          <option value="">Escolha o seu time</option>
+          <option value="">Escolha o time</option>
           ${todos.map((c) => `<option value="${c.id}">${esc(c.nome)} (${esc(c.uf)})</option>`).join('')}
           <option value="outro">Meu time não está na lista</option>
         </select>
@@ -702,7 +702,7 @@ function telaResultadoTorcida() {
     <main class="resultado">
       <section class="res-hero wrap">
         <div class="res-txt">
-          <p class="eyebrow">${dificil ? 'Pelas suas respostas, você torce para' : 'Você torce para'}</p>
+          <p class="eyebrow">${dificil ? 'Pelas suas respostas, você está pensando em' : 'Você estava pensando em'}</p>
           <div class="res-nome-linha">
             <figure class="res-retrato">${escudoSVG(escudoDoClube(c), 'escudo escudo-g')}</figure>
             <h1>${esc(c.nome)}</h1>
@@ -722,11 +722,11 @@ ${comparacao}
 
       <section class="bloco wrap compartilhar">
         <div class="card-preview">
-          ${estado.cardUrl ? `<img src="${estado.cardUrl}" alt="Card: eu torço para ${esc(c.nome)}">` : '<div class="card-carregando">Gerando o card…</div>'}
+          ${estado.cardUrl ? `<img src="${estado.cardUrl}" alt="Card: o time que eu pensei foi ${esc(c.nome)}">` : '<div class="card-carregando">Gerando o card…</div>'}
         </div>
         <div class="compartilhar-txt">
           <p class="eyebrow">Compartilhe</p>
-          <h2>Seu card de torcedor</h2>
+          <h2>Seu card de adivinhação</h2>
           <p>Formato Stories (1080 × 1920). No celular, você também pode tocar e segurar a imagem para salvar.</p>
           <div class="botoes">
             <button class="btn-pri" data-acao="baixar-card">Baixar card</button>
@@ -743,7 +743,7 @@ ${comparacao}
       </section>
 
       <section class="wrap res-correcao">
-        ${dificil && !compartilhado ? `<button class="btn-link reportar" data-acao="feedback" data-tipo="correcao" data-sobre="Modo difícil errou: deu ${esc(c.nome)}">Não torço para ${esc(c.nome)}? Conte qual é o seu time</button>` : ''}
+        ${dificil && !compartilhado ? `<button class="btn-link reportar" data-acao="feedback" data-tipo="correcao" data-sobre="Modo difícil errou: deu ${esc(c.nome)}">Não pensou em ${esc(c.nome)}? Conte em qual time você pensou</button>` : ''}
         <button class="btn-link reportar" data-acao="feedback" data-tipo="correcao" data-sobre="Modo torcida: ${esc(c.nome)} (${esc(c.id)})">Algo errado sobre ${esc(c.nome)}? Corrigir informação</button>
       </section>
     </main>
@@ -844,9 +844,7 @@ function rotuloTamanho(v) {
 }
 
 function sliderDificilVisual(q, v) {
-  const valor = q.ui === 'idade' ? idadeDe(v).rotulo : rotuloTamanho(v);
-  const legenda = q.ui === 'idade' ? idadeDe(v).detalhe : 'torcida';
-  return `<div class="numero-grande"><span class="tabnum">${valor}</span><small>${legenda}</small></div>`;
+  return `<div class="numero-grande"><span class="tabnum">${rotuloTamanho(v)}</span><small>torcida</small></div>`;
 }
 
 function telaDificil() {
@@ -875,9 +873,8 @@ function telaDificil() {
       <p class="campo-legenda">${d.rascunho.length ? `${d.rascunho.length} de 3 cores` : 'Toque nas cores para pintar a camisa'}</p>
       <button class="btn-link nao-sei" data-acao="dificil-responder" data-valor="nao-sei">Não sei, pular esta</button></div>`;
   } else if (q.tipo === 'slider') {
-    const step = q.ui === 'idade' ? 1 / (PASSOS_IDADE - 1) : 0.01;
     corpo = `<div class="acao-slider">${sliderDificilVisual(q, d.rascunho)}
-      <input type="range" id="dificil-${q.id}" class="slider" min="0" max="1" step="${step}" value="${d.rascunho}" aria-label="${esc(q.texto)}" data-acao="dificil-slider">
+      <input type="range" id="dificil-${q.id}" class="slider" min="0" max="1" step="0.01" value="${d.rascunho}" aria-label="${esc(q.texto)}" data-acao="dificil-slider">
       <div class="slider-rotulos"><span>${esc(q.rotulos[0])}</span><span>${esc(q.rotulos[1])}</span></div>
       <button class="btn-link nao-sei" data-acao="dificil-responder" data-valor="nao-sei">Não sei, pular esta</button></div>`;
   } else {
@@ -949,7 +946,7 @@ function mostrarResultadoDificil(clube, match, similares, oposto, compartilhado)
   gerarCardTorcida(estado.resultado).then((url) => {
     estado.cardUrl = url;
     const box = app.querySelector('.card-preview');
-    if (box) box.innerHTML = `<img src="${url}" alt="Card: eu torço para ${esc(clube.nome)}">`;
+    if (box) box.innerHTML = `<img src="${url}" alt="Card: o time que eu pensei foi ${esc(clube.nome)}">`;
   }).catch(() => {
     const box = app.querySelector('.card-preview');
     if (box) box.innerHTML = '<div class="card-carregando">Não foi possível gerar o card neste navegador.</div>';
@@ -1059,12 +1056,12 @@ function linkResultado() {
 function textoCompartilhar() {
   const r = estado.resultado;
   if (r.variante === 'dificil') {
-    return `No modo difícil da Prancheta, deu ${r.clube.nome} (${r.match}% compatível)${r.oposto?.rival ? ` e o meu oposto é o ${r.oposto.clube.nome}` : ''}. Para qual time você torce?`;
+    return `Pensei em um time e, no modo difícil, a Prancheta disse ${r.clube.nome} (${r.match}% compatível). Pense em um time e veja se ela adivinha!`;
   }
   if (r.modo === 'torcida') {
     return r.acertou
-      ? `A Prancheta descobriu em ${r.perguntas} perguntas que eu torço para ${r.clube.nome}. Será que ela adivinha o seu time?`
-      : `Eu torço para ${r.clube.nome} e a Prancheta não conseguiu adivinhar. Será que ela adivinha o seu time?`;
+      ? `Pensei em um time e a Prancheta adivinhou em ${r.perguntas} perguntas: ${r.clube.nome}. Pense em um time e veja se ela acerta!`
+      : `Pensei em ${r.clube.nome} e a Prancheta não conseguiu adivinhar. Pense em um time e tente também!`;
   }
   const p = r.ranking[0];
   return r.modo === 'treinador'
@@ -1215,7 +1212,7 @@ app.addEventListener('click', (ev) => {
       if (!id) break;
       if (id === 'outro') {
         registrarErroTorcida(null);
-        abrirFeedback({ tipo: 'melhoria', sobre: 'Modo torcida: meu time não está na lista' });
+        abrirFeedback({ tipo: 'melhoria', sobre: 'Modo adivinhação: o time que pensei não está na lista' });
         break;
       }
       const clube = clubePorId(id);

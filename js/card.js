@@ -259,7 +259,7 @@ function rodape(ctx, chamada) {
 
 const paraUrl = (cv) => new Promise((ok, erro) => cv.toBlob((b) => (b ? ok(URL.createObjectURL(b)) : erro(new Error('toBlob'))), 'image/png'));
 
-// Card do modo torcida: escudo, "eu torço para", quantas perguntas a Prancheta precisou e a ficha do clube.
+// Card do modo adivinhação: escudo, o time pensado, quantas perguntas a Prancheta precisou e a ficha do clube.
 export async function gerarCardTorcida({ clube: c, acertou, perguntas, variante, match, oposto }) {
   const dificil = variante === 'dificil';
   await carregarFontes();
@@ -277,7 +277,7 @@ export async function gerarCardTorcida({ clube: c, acertou, perguntas, variante,
   ctx.fillStyle = COR.suave;
   ctx.font = `600 30px ${ROTULO}`;
   ctx.textAlign = 'right';
-  ctx.fillText(dificil ? 'PARA QUAL TIME VOCÊ TORCE? · DIFÍCIL' : 'PARA QUAL TIME VOCÊ TORCE?', W - M, 146);
+  ctx.fillText(dificil ? 'QUAL TIME VOCÊ ESTÁ PENSANDO? · DIFÍCIL' : 'QUAL TIME VOCÊ ESTÁ PENSANDO?', W - M, 146);
   ctx.textAlign = 'center';
 
   // escudo
@@ -292,7 +292,7 @@ export async function gerarCardTorcida({ clube: c, acertou, perguntas, variante,
 
   ctx.fillStyle = COR.suave;
   ctx.font = `600 42px ${ROTULO}`;
-  ctx.fillText('EU TORÇO PARA', W / 2, 670);
+  ctx.fillText('O TIME QUE EU PENSEI', W / 2, 670);
 
   // nome (até 2 linhas)
   const nome = c.nome.toUpperCase();
@@ -354,6 +354,6 @@ export async function gerarCardTorcida({ clube: c, acertou, perguntas, variante,
     quebrar(ctx, String(v).toUpperCase(), colW - 30).slice(0, 2).forEach((l, j) => ctx.fillText(l, x, yy + 54 + j * 50));
   });
 
-  rodape(ctx, 'E VOCÊ? DESCUBRA O SEU EM');
+  rodape(ctx, 'PENSE EM UM TIME E JOGUE EM');
   return paraUrl(cv);
 }

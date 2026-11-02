@@ -1,7 +1,7 @@
 import { CLUBES_TORCIDA, REGIAO_UF, DOZE_GRANDES, DEZ_MAIORES_TORCIDAS } from './data/torcida.js';
 import { CLUBES, TIMES } from './data/times.js';
 
-// Modo "Para qual time você torce?": adivinhação no estilo Akinator.
+// Modo "Qual time você está pensando?": adivinhação no estilo Akinator.
 // Cada clube começa com uma probabilidade (torcidas maiores pesam mais). Cada resposta multiplica a
 // probabilidade de cada clube pela chance de alguém daquele clube responder aquilo. A próxima pergunta
 // é a que mais reduz a incerteza (entropia esperada). Dados desconhecidos (null) não pesam.
@@ -28,43 +28,41 @@ const sn = (id, tag, texto, valor) => ({ id, tipo: 'sn', tag, texto, valor });
 const cat = (id, tag, texto, opcoes, valor) => ({ id, tipo: 'cat', tag, texto, opcoes, valor });
 
 const PERGUNTAS = [
-  cat('regiao', 'Mapa', 'Em que região do Brasil fica o seu time?',
+  cat('regiao', 'Mapa', 'Em que região do Brasil fica o time?',
     [['N', 'Norte'], ['NE', 'Nordeste'], ['CO', 'Centro-Oeste'], ['SE', 'Sudeste'], ['S', 'Sul']],
     (c) => REGIAO_UF[c.uf]),
-  cat('serie', 'Divisão', 'Em que divisão do Brasileirão o seu time joga em 2026?',
+  cat('serie', 'Divisão', 'Em que divisão do Brasileirão o time joga em 2026?',
     [['A', 'Série A'], ['B', 'Série B'], ['C', 'Série C'], ['D', 'Série D']], doCampo('serie')),
-  cat('mascote-tipo', 'Mascote', 'O mascote do seu time é…',
+  cat('mascote-tipo', 'Mascote', 'O mascote do time é…',
     [['ave', 'Uma ave'], ['felino', 'Um felino (leão, tigre, onça…)'], ['bicho', 'Outro bicho'],
       ['pessoa', 'Uma pessoa ou personagem'], ['outro', 'Outra coisa (fantasma, furacão…)']], doCampo('mascoteTipo')),
-  cat('cor-principal', 'Camisa', 'Qual cor mais aparece na camisa principal do seu time?',
+  cat('cor-principal', 'Camisa', 'Qual cor mais aparece na camisa principal do time?',
     [['vermelho', 'Vermelho'], ['preto', 'Preto'], ['branco', 'Branco'], ['verde', 'Verde'], ['azul', 'Azul'],
       ['amarelo', 'Amarelo'], ['grena', 'Grená']], doCampo('principal')),
 
-  sn('capital', 'Mapa', 'O seu time é de uma capital?', doCampo('capital')),
-  sn('litoral', 'Mapa', 'A cidade do seu time tem praia?', doCampo('litoral')),
-  sn('nome-lugar', 'Nome', 'O nome do seu time também é o nome de uma cidade, estado ou região?', doCampo('nomeLugar')),
-  sn('centenario', 'História', 'O seu time já passou dos 100 anos?', (c) => (c.fundacao ? c.fundacao <= 1926 : null)),
-  sn('jovem', 'História', 'O seu time foi fundado depois de 1970?', (c) => (c.fundacao ? c.fundacao > 1970 : null)),
-  sn('doze-grandes', 'Tamanho', 'O seu time é um dos 12 grandes do futebol brasileiro?', (c) => DOZE_GRANDES.includes(c.id)),
-  sn('top10', 'Torcida', 'O seu time tem uma das 10 maiores torcidas do Brasil?', (c) => DEZ_MAIORES_TORCIDAS.includes(c.id)),
-  sn('brasileiro', 'Títulos', 'O seu time já foi campeão brasileiro da primeira divisão?', doCampo('br')),
-  sn('libertadores', 'Títulos', 'O seu time já ganhou a Libertadores?', doCampo('lib')),
-  sn('copa-brasil', 'Títulos', 'O seu time já ganhou a Copa do Brasil?', doCampo('cb')),
-  sn('nordestao', 'Títulos', 'O seu time já ganhou a Copa do Nordeste?', doCampo('ne')),
-  sn('arena', 'Estádio', 'O seu time manda jogos num estádio que recebeu a Copa do Mundo de 2014?', doCampo('arena')),
-  sn('rival-cidade', 'Rivalidade', 'O maior rival do seu time é da mesma cidade?', doCampo('rivalCidade')),
-  sn('listrada', 'Camisa', 'A camisa principal do seu time é listrada?', doCampo('listrada')),
-  sn('tricolor', 'Cores', 'O seu time tem três cores (é tricolor)?', (c) => (c.cores ? c.cores.length >= 3 : null)),
-  sn('alvinegro', 'Cores', 'O seu time é alvinegro (só preto e branco)?',
+  sn('capital', 'Mapa', 'O time é de uma capital?', doCampo('capital')),
+  sn('litoral', 'Mapa', 'A cidade do time tem praia?', doCampo('litoral')),
+  sn('nome-lugar', 'Nome', 'O nome do time também é o nome de uma cidade, estado ou região?', doCampo('nomeLugar')),
+  sn('doze-grandes', 'Tamanho', 'O time é um dos 12 grandes do futebol brasileiro?', (c) => DOZE_GRANDES.includes(c.id)),
+  sn('top10', 'Torcida', 'O time tem uma das 10 maiores torcidas do Brasil?', (c) => DEZ_MAIORES_TORCIDAS.includes(c.id)),
+  sn('brasileiro', 'Títulos', 'O time já foi campeão brasileiro da primeira divisão?', doCampo('br')),
+  sn('libertadores', 'Títulos', 'O time já ganhou a Libertadores?', doCampo('lib')),
+  sn('copa-brasil', 'Títulos', 'O time já ganhou a Copa do Brasil?', doCampo('cb')),
+  sn('nordestao', 'Títulos', 'O time já ganhou a Copa do Nordeste?', doCampo('ne')),
+  sn('arena', 'Estádio', 'O time manda jogos num estádio que recebeu a Copa do Mundo de 2014?', doCampo('arena')),
+  sn('rival-cidade', 'Rivalidade', 'O maior rival do time é da mesma cidade?', doCampo('rivalCidade')),
+  sn('listrada', 'Camisa', 'A camisa principal do time é listrada?', doCampo('listrada')),
+  sn('tricolor', 'Cores', 'O time tem três cores (é tricolor)?', (c) => (c.cores ? c.cores.length >= 3 : null)),
+  sn('alvinegro', 'Cores', 'O time é alvinegro (só preto e branco)?',
     (c) => (c.cores ? c.cores.length === 2 && c.cores.includes('preto') && c.cores.includes('branco') : null)),
-  sn('rubro-negro', 'Cores', 'O seu time é rubro-negro (vermelho e preto)?',
+  sn('rubro-negro', 'Cores', 'O time é rubro-negro (vermelho e preto)?',
     (c) => (c.cores ? c.cores.includes('vermelho') && c.cores.includes('preto') : null)),
-  sn('cor-vermelho', 'Cores', 'Tem vermelho nas cores do seu time?', temCor('vermelho')),
-  sn('cor-verde', 'Cores', 'Tem verde nas cores do seu time?', temCor('verde')),
-  sn('cor-azul', 'Cores', 'Tem azul (de qualquer tom) nas cores do seu time?', temCor('azul')),
-  sn('cor-amarelo', 'Cores', 'Tem amarelo nas cores do seu time?', temCor('amarelo')),
-  sn('cor-preto', 'Cores', 'Tem preto nas cores do seu time?', temCor('preto')),
-  sn('cor-grena', 'Cores', 'O seu time usa grená (vinho)?', temCor('grena')),
+  sn('cor-vermelho', 'Cores', 'Tem vermelho nas cores do time?', temCor('vermelho')),
+  sn('cor-verde', 'Cores', 'Tem verde nas cores do time?', temCor('verde')),
+  sn('cor-azul', 'Cores', 'Tem azul (de qualquer tom) nas cores do time?', temCor('azul')),
+  sn('cor-amarelo', 'Cores', 'Tem amarelo nas cores do time?', temCor('amarelo')),
+  sn('cor-preto', 'Cores', 'Tem preto nas cores do time?', temCor('preto')),
+  sn('cor-grena', 'Cores', 'O time usa grená (vinho)?', temCor('grena')),
 ];
 
 // "O mascote é um leão?" etc., para mascotes que aparecem em mais de um clube.
@@ -72,7 +70,7 @@ const ARTIGO = { Águia: 'uma águia', Baleia: 'uma baleia', Macaca: 'uma macaca
 const contagem = {};
 CLUBES_TORCIDA.forEach((c) => { if (c.mascote) contagem[c.mascote] = (contagem[c.mascote] || 0) + 1; });
 Object.entries(contagem).filter(([, n]) => n >= 2).forEach(([m]) => {
-  PERGUNTAS.push(sn(`mascote-${m}`, 'Mascote', `O mascote do seu time é ${ARTIGO[m] || `um ${m.toLowerCase()}`}?`,
+  PERGUNTAS.push(sn(`mascote-${m}`, 'Mascote', `O mascote do time é ${ARTIGO[m] || `um ${m.toLowerCase()}`}?`,
     (c) => (c.mascote ? c.mascote === m : null)));
 });
 
@@ -81,22 +79,20 @@ const ATUAL = Object.fromEntries(TIMES.filter((t) => t.tipo === 'atual').map((t)
 const faixa = (v, alto, baixo) => (v === undefined ? null : v >= alto ? true : v <= baixo ? false : null);
 
 PERGUNTAS.push(
-  sn('mundial', 'Títulos', 'O seu time já foi campeão do mundo?', doCampo('mundial')),
-  sn('mais5br', 'Títulos', 'O seu time tem mais de 5 títulos brasileiros?', (c) => (c.brasileiros === null ? null : c.brasileiros > 5)),
-  sn('br-recente', 'Títulos', 'O seu time foi campeão brasileiro nos últimos 10 anos?', doCampo('brRecente')),
-  sn('caiu', 'História', 'O seu time já caiu da Série A para a Série B alguma vez?', doCampo('caiu')),
-  sn('final-conmebol', 'Títulos', 'O seu time já jogou uma final de Libertadores ou de Sul-Americana?', doCampo('finalConmebol')),
-  sn('estadio-grande', 'Estádio', 'O estádio onde o seu time manda os jogos cabe mais de 40 mil pessoas?', doCampo('estadioGrande')),
-  sn('estadio-proprio', 'Estádio', 'O estádio onde o seu time joga pertence ao próprio clube?', doCampo('estadioProprio')),
-  sn('imigrantes', 'Comunidade', 'O seu time foi fundado por uma colônia de imigrantes (italianos, portugueses, alemães…)?', doCampo('imigrantes')),
-  sn('operarios', 'Comunidade', 'O seu time nasceu entre trabalhadores, como operários ou ferroviários?', doCampo('operarios')),
-  sn('luta', 'Lutas', 'O seu time tem uma história marcante de luta contra o racismo ou pela democracia?', doCampo('luta')),
-  sn('povo', 'Torcida', 'A sua torcida se orgulha de chamar o clube de "time do povo" ou "o mais querido"?', doCampo('povo')),
-  sn('lamartine', 'Hino', 'O hino que a sua torcida mais canta foi composto por Lamartine Babo?', doCampo('lamartine')),
-  sn('cruz', 'Uniforme', 'O escudo do seu time tem uma cruz?', doCampo('cruz')),
-  sn('posse', 'Tática', 'Nesta temporada, o seu time costuma ficar mais com a bola do que o adversário?', (c) => faixa(ATUAL[c.id]?.posse, 60, 48)),
-  sn('pressao', 'Tática', 'O seu time é conhecido por pressionar a saída de bola do adversário?', (c) => faixa(ATUAL[c.id]?.pressao, 70, 50)),
-  cat('patrocinio', 'Patrocínio', 'Qual destas marcas estampou a camisa do seu time por muitos anos?',
+  sn('mundial', 'Títulos', 'O time já foi campeão do mundo?', doCampo('mundial')),
+  sn('mais5br', 'Títulos', 'O time tem mais de 5 títulos brasileiros?', (c) => (c.brasileiros === null ? null : c.brasileiros > 5)),
+  sn('br-recente', 'Títulos', 'O time foi campeão brasileiro nos últimos 10 anos?', doCampo('brRecente')),
+  sn('caiu', 'História', 'O time já caiu da Série A para a Série B alguma vez?', doCampo('caiu')),
+  sn('final-conmebol', 'Títulos', 'O time já jogou uma final de Libertadores ou de Sul-Americana?', doCampo('finalConmebol')),
+  sn('estadio-proprio', 'Estádio', 'O estádio onde o time joga pertence ao próprio clube?', doCampo('estadioProprio')),
+  sn('imigrantes', 'Comunidade', 'O time foi fundado por uma colônia de imigrantes (italianos, portugueses, alemães…)?', doCampo('imigrantes')),
+  sn('operarios', 'Comunidade', 'O time nasceu entre trabalhadores, como operários ou ferroviários?', doCampo('operarios')),
+  sn('luta', 'Lutas', 'O time tem uma história marcante de luta contra o racismo ou pela democracia?', doCampo('luta')),
+  sn('povo', 'Torcida', 'A torcida se orgulha de chamar o clube de "time do povo" ou "o mais querido"?', doCampo('povo')),
+  sn('cruz', 'Uniforme', 'O escudo do time tem uma cruz?', doCampo('cruz')),
+  sn('posse', 'Tática', 'Nesta temporada, o time costuma ficar mais com a bola do que o adversário?', (c) => faixa(ATUAL[c.id]?.posse, 60, 48)),
+  sn('pressao', 'Tática', 'O time é conhecido por pressionar a saída de bola do adversário?', (c) => faixa(ATUAL[c.id]?.pressao, 70, 50)),
+  cat('patrocinio', 'Patrocínio', 'Qual destas marcas estampou a camisa do time por muitos anos?',
     [['parmalat', 'Parmalat'], ['unimed', 'Unimed'], ['lubrax', 'Lubrax (Petrobras)'], ['banrisul', 'Banrisul'], ['nenhum', 'Nenhuma dessas']],
     doCampo('patrocinio')),
 );
@@ -107,12 +103,12 @@ const doRival = (f) => (c) => {
   return r ? f(r) : null;
 };
 PERGUNTAS.push(
-  sn('rival-mundial', 'Rivalidade', 'O maior rival do seu time já foi campeão do mundo?', doRival((r) => r.mundial)),
-  sn('rival-alvinegro', 'Rivalidade', 'O maior rival do seu time é alvinegro?',
+  sn('rival-mundial', 'Rivalidade', 'O maior rival do time já foi campeão do mundo?', doRival((r) => r.mundial)),
+  sn('rival-alvinegro', 'Rivalidade', 'O maior rival do time é alvinegro?',
     doRival((r) => (r.cores ? r.cores.length === 2 && r.cores.includes('preto') && r.cores.includes('branco') : null))),
   sn('rival-br-recente', 'Rivalidade', 'O maior rival foi campeão brasileiro nos últimos 10 anos?', doRival((r) => r.brRecente)),
   sn('rival-mais5', 'Rivalidade', 'O maior rival tem mais de 5 títulos brasileiros?', doRival((r) => (r.brasileiros === null ? null : r.brasileiros > 5))),
-  sn('rival-nunca-caiu', 'Rivalidade', 'O maior rival do seu time nunca caiu para a Série B?', doRival((r) => (r.caiu === null ? null : !r.caiu))),
+  sn('rival-nunca-caiu', 'Rivalidade', 'O maior rival do time nunca caiu para a Série B?', doRival((r) => (r.caiu === null ? null : !r.caiu))),
   sn('rival-libertadores', 'Rivalidade', 'O maior rival já ganhou a Libertadores?', doRival((r) => r.lib)),
 );
 
@@ -124,10 +120,10 @@ PERGUNTAS.forEach((q) => { q.obvia = OBVIAS.has(q.id) || q.id.startsWith('mascot
 
 // Pergunta final, montada com os candidatos mais prováveis.
 const DINAMICAS = [
-  { campo: 'idolo', tag: 'Ídolo', texto: 'Qual destes craques é ídolo da sua torcida?' },
+  { campo: 'idolo', tag: 'Ídolo', texto: 'Qual destes craques é ídolo desse time?' },
 ];
 
-// Tolerância a erro: quem torce para um clube responde certo ~88–90% das vezes.
+// Tolerância a erro: quem pensa num clube responde certo ~88–90% das vezes.
 const PROB_CATEGORIA = 0.88;
 const PROB_SN = 0.9;
 
@@ -228,25 +224,16 @@ export function horaDeChutar(historico, eliminados, limite) {
 export const TOTAL_DIFICIL = 15;
 const DINAMICAS_NO_FIM = 2;
 
-// Tempo de história em faixas (idade do clube em 2026), em vez de pedir a década exata.
-const IDADES = [
-  { rotulo: 'Bem novo', detalhe: 'menos de 30 anos', centro: 15 },
-  { rotulo: 'Jovem', detalhe: '30 a 60 anos', centro: 45 },
-  { rotulo: 'Tradicional', detalhe: '60 a 90 anos', centro: 75 },
-  { rotulo: 'Centenário', detalhe: '90 a 110 anos', centro: 100 },
-  { rotulo: 'Dos mais antigos', detalhe: 'mais de 110 anos', centro: 118 },
-];
-const ANO_BASE = 2026;
 const gauss = (d, s) => Math.exp(-((d / s) ** 2));
 
 const ACOES_DIFICIL = [
   {
-    id: 'mapa', tipo: 'cat', ui: 'mapa', tag: 'Sotaque', texto: 'Toque no mapa: de onde vem o sotaque da sua arquibancada?',
+    id: 'mapa', tipo: 'cat', ui: 'mapa', tag: 'Sotaque', texto: 'Toque no mapa: de onde vem o sotaque da torcida desse time?',
     opcoes: [['N', 'Norte'], ['NE', 'Nordeste'], ['CO', 'Centro-Oeste'], ['SE', 'Sudeste'], ['S', 'Sul']],
     valor: (c) => REGIAO_UF[c.uf],
   },
   {
-    id: 'camisa', tipo: 'cores', ui: 'cores', tag: 'Camisa', texto: 'Pinte a camisa: escolha as cores do seu time (até 3).',
+    id: 'camisa', tipo: 'cores', ui: 'cores', tag: 'Camisa', texto: 'Pinte a camisa: escolha as cores do time (até 3).',
     valor: (c) => c.cores,
     vero: (c, r) => {
       if (!c.cores || !r.length) return 1;
@@ -260,23 +247,13 @@ const ACOES_DIFICIL = [
     },
   },
   {
-    id: 'historia', tipo: 'slider', ui: 'idade', tag: 'História', texto: 'Arraste: quanta história o seu time já tem?',
-    rotulos: ['Clube novo', 'Dos mais antigos do país'],
-    valor: (c) => c.fundacao,
-    vero: (c, v) => (c.fundacao ? 0.08 + 0.92 * gauss(ANO_BASE - c.fundacao - idadeDe(v).centro, 18) : 1),
-    conc: (c, v) => (c.fundacao ? gauss(ANO_BASE - c.fundacao - idadeDe(v).centro, 25) : null),
-  },
-  {
-    id: 'tamanho-torcida', tipo: 'slider', ui: 'tamanho', tag: 'Torcida', texto: 'Arraste: qual é o tamanho da torcida do seu time?',
+    id: 'tamanho-torcida', tipo: 'slider', ui: 'tamanho', tag: 'Torcida', texto: 'Arraste: qual é o tamanho da torcida do time?',
     rotulos: ['Pequena, todo mundo se conhece', 'Uma das maiores do país'],
     valor: (c) => c.massa,
     vero: (c, v) => 0.1 + 0.9 * gauss(c.massa - v * 100, 22),
     conc: (c, v) => gauss(c.massa - v * 100, 30),
   },
 ];
-
-export const idadeDe = (v) => IDADES[Math.round(v * (IDADES.length - 1))];
-export const PASSOS_IDADE = IDADES.length;
 
 const NUCLEO_DIFICIL = [];
 
@@ -294,7 +271,7 @@ export function montarDificil() {
   const nucleo = [...ACOES_DIFICIL, ...PERGUNTAS.filter((q) => NUCLEO_DIFICIL.includes(q.id))];
   // Fora do sorteio: o que o núcleo já cobre (região, cor principal) e perguntas de mascote específico.
   // Fora: o que as ações já cobrem (região, cores, idade, tamanho da torcida).
-  const fora = new Set(['regiao', 'cor-principal', 'centenario', 'jovem', 'top10', ...NUCLEO_DIFICIL]);
+  const fora = new Set(['regiao', 'cor-principal', 'top10', ...NUCLEO_DIFICIL]);
   const pool = PERGUNTAS.filter((q) => !fora.has(q.id) && !q.id.startsWith('mascote-'));
   // Prioridade para história, títulos, comunidade, tática e rivalidade; no máximo 1 pergunta direta
   // além do mapa e da camisa.
@@ -316,7 +293,7 @@ export function perguntasFinaisDificil(historico) {
   }
   // Se os candidatos não tiverem dados para isso, completa com perguntas do banco.
   const feitas = new Set(historico.map((h) => h.pergunta.id));
-  const repetidas = new Set(['centenario', 'jovem', 'top10']);
+  const repetidas = new Set(['top10']);
   const extras = embaralhar(PERGUNTAS.filter((q) => !feitas.has(q.id) && !q.obvia && !repetidas.has(q.id)));
   while (lista.length < DINAMICAS_NO_FIM && extras.length) lista.push(extras.shift());
   return lista;
