@@ -37,10 +37,7 @@ export const BRASOES = {
   corinthians: {
     forma: 'redondo', borda: PT, fundo: { tipo: 'liso', cores: [BR] },
     atras: [
-      { t: 'poligono', pts: '8,0 14,-6 72,96 66,102', cor: VM },
-      { t: 'poligono', pts: '92,0 86,-6 28,96 34,102', cor: VM },
-      { t: 'ancora', x: 50, y: 99, s: 0.9, cor: VM },
-    ],
+      ],
     el: [
       { t: 'anel', r: 42, cor: PT, larg: 11, txt: 'CORINTHIANS PAULISTA', corTxt: BR },
       { t: 'disco', r: 22, cor: BR, listras: [PT, BR], horizontal: true, n: 9 },
@@ -48,20 +45,18 @@ export const BRASOES = {
     ],
   },
   saopaulo: {
-    forma: 'triangular', borda: PT, fundo: { tipo: 'vertical', cores: ['#e4002b', BR, PT] },
+    forma: 'bico', borda: PT, fundo: { tipo: 'vertical', cores: ['#e4002b', BR, PT] },
     el: [{ t: 'topo', alt: 30, cor: PT, txt: 'SPFC', corTxt: BR, tam: 21 }],
   },
   santos: {
-    forma: 'lobulado', borda: PT, fundo: { tipo: 'vertical', cores: [BR, PT], n: 7 }, coroa: OURO,
+    forma: 'lobulado', borda: PT, fundo: { tipo: 'vertical', cores: [BR, PT], n: 7 }, 
     el: [{ t: 'topo', alt: 36, cor: BR, txt: 'S.F.C.', corTxt: PT, tam: 17 }],
   },
   vasco: {
     forma: 'classico', borda: BR, fundo: { tipo: 'faixa', cores: [PT, BR] },
     el: [
       { t: 'disco', x: 24, y: 16, r: 11, cor: BR },
-      { t: 'cruz-patea', x: 24, y: 16, r: 9, cor: '#d81e2b' },
-      { t: 'poligono', pts: '38,62 62,62 58,70 42,70', cor: PT },
-    ],
+      ],
   },
   fluminense: {
     forma: 'lobulado', borda: BR, fundo: { tipo: 'horizontal', cores: ['#7a0026', BR, '#00613c'] },
@@ -69,15 +64,14 @@ export const BRASOES = {
   },
   botafogo: {
     forma: 'cantos', borda: BR, fundo: { tipo: 'liso', cores: [PT] },
-    el: [{ t: 'estrela', x: 50, y: 56, r: 28, cor: BR }],
+    el: [{ t: 'estrela', x: 50, y: 60, r: 16, cor: BR }],
   },
   cruzeiro: {
     forma: 'redondo', borda: BR, fundo: { tipo: 'liso', cores: ['#0033a0'] },
     el: [
       { t: 'anel', r: 42, cor: '#0033a0', larg: 11, txt: 'CRUZEIRO ESPORTE CLUBE', corTxt: BR },
       { t: 'disco', r: 34, contorno: BR, borda: 2 },
-      { t: 'cruzeiro', cor: BR },
-    ],
+      ],
   },
   atletico: {
     forma: 'classico', borda: BR, fundo: { tipo: 'vertical', cores: [PT, BR], n: 7 }, estrelas: [OURO],
@@ -101,7 +95,7 @@ export const BRASOES = {
     ],
   },
   athletico: {
-    forma: 'athletico', borda: PT, fundo: { tipo: 'diagonal', cores: ['#c8102e', PT], angulo: -32, largura: 13 },
+    forma: 'bico', borda: PT, fundo: { tipo: 'diagonal', cores: ['#c8102e', PT], angulo: -32, largura: 13 },
     textoAcima: { txt: 'CAP', cor: '#eef2ea', tam: 13, x: 22 },
   },
   coritiba: {
@@ -140,8 +134,6 @@ export const BRASOES = {
     el: [
       { t: 'texto', txt: 'RED BULL', y: 24, tam: 13, cor: '#d6001c' },
       { t: 'disco', x: 50, y: 56, r: 15, cor: AM },
-      { t: 'poligono', pts: '6,62 30,44 42,60 20,74', cor: '#d6001c' },
-      { t: 'poligono', pts: '94,62 70,44 58,60 80,74', cor: '#d6001c' },
       { t: 'texto', txt: 'BRAGANTINO', y: 96, tam: 10, cor: '#d6001c' },
     ],
   },
@@ -181,7 +173,7 @@ export const BRASOES = {
   },
   crb: {
     forma: 'arredondado', borda: VM, fundo: { tipo: 'liso', cores: [BR] },
-    el: [{ t: 'cruz-sg', cor: VM, ate: 52, y: 18 }, { t: 'texto', txt: 'CRB', y: 92, tam: 32, cor: VM }],
+    el: [{ t: 'texto', txt: 'CRB', y: 92, tam: 32, cor: VM }],
   },
   criciuma: {
     forma: 'leque', borda: PT, fundo: { tipo: 'diagonal', cores: [AM, PT], angulo: 30, largura: 14 }, estrelas: [OURO, OURO, OURO],
@@ -239,7 +231,6 @@ export const BRASOES = {
   'sao-bernardo': {
     forma: 'quadrado', borda: AM, fundo: { tipo: 'liso', cores: [PT] },
     el: [
-      { t: 'poligono', pts: '54,30 90,24 92,80 60,88 50,60', cor: AM },
       { t: 'bola', x: 34, y: 54, r: 16 },
       { t: 'texto', txt: 'SÃO BERNARDO', y: 104, tam: 8, cor: AM },
     ],
@@ -259,8 +250,6 @@ export const BRASOES = {
     el: [
       { t: 'texto', txt: 'AMAZONAS', y: 26, tam: 13, cor: AM },
       { t: 'disco', x: 50, y: 68, r: 24, cor: AM },
-      { t: 'disco', x: 42, y: 62, r: 3, cor: PT }, { t: 'disco', x: 58, y: 62, r: 3, cor: PT },
-      { t: 'disco', x: 50, y: 76, r: 4, cor: PT }, { t: 'disco', x: 36, y: 76, r: 2.5, cor: PT }, { t: 'disco', x: 64, y: 76, r: 2.5, cor: PT },
     ],
   },
   anapolis: {
@@ -273,14 +262,14 @@ export const BRASOES = {
   },
   'botafogo-pb': {
     forma: 'classico', borda: BR, fundo: { tipo: 'liso', cores: [PT] },
-    el: [{ t: 'estrela', x: 50, y: 56, r: 28, cor: VM }],
+    el: [{ t: 'estrela', x: 50, y: 60, r: 16, cor: VM }],
   },
   brusque: {
     forma: 'classico', borda: PT, fundo: { tipo: 'vertical', cores: [VD, AM, VM, AM, VM] }, estrelas: [OURO, OURO, OURO],
     el: [{ t: 'topo', alt: 30, cor: AM, txt: 'BRUSQUE', corTxt: PT, tam: 14 }],
   },
   caxias: {
-    forma: 'engrenagem', borda: BR, fundo: { tipo: 'liso', cores: [GR] },
+    forma: 'redondo', borda: BR, fundo: { tipo: 'liso', cores: [GR] },
     el: [
       { t: 'disco', x: 50, y: 60, r: 30, cor: GR, contorno: BR, borda: 2 },
       { t: 'texto', txt: 'S.E.R.', y: 46, tam: 11, cor: BR },
@@ -338,7 +327,7 @@ export const BRASOES = {
   },
   'volta-redonda': {
     forma: 'classico', borda: BR, fundo: { tipo: 'liso', cores: [PT] }, estrelas: [OURO, OURO],
-    el: [{ t: 'texto', txt: 'VRFC', y: 26, tam: 17, cor: BR }, { t: 'raio', cor: AM }],
+    el: [{ t: 'texto', txt: 'VRFC', y: 26, tam: 17, cor: BR }, ],
   },
   'ypiranga-rs': {
     forma: 'classico', borda: VD, fundo: { tipo: 'horizontal', cores: [AM, VD], n: 2 },
@@ -368,12 +357,11 @@ export const BRASOES = {
   },
   'moto-club': {
     forma: 'redondo', borda: PT, fundo: { tipo: 'liso', cores: [VM] },
-    el: [{ t: 'cruz-patea', x: 50, y: 60, r: 40, cor: PT }, { t: 'disco', x: 50, y: 60, r: 13, cor: BR, contorno: PT, borda: 2 }],
+    el: [{ t: 'disco', x: 50, y: 60, r: 13, cor: BR, contorno: PT, borda: 2 }],
   },
   'tuna-luso': {
-    forma: 'trevo', borda: VD, fundo: { tipo: 'liso', cores: [BR] },
+    forma: 'arredondado', borda: VD, fundo: { tipo: 'liso', cores: [BR] },
     el: [
-      { t: 'cruz-patea', x: 50, y: 60, r: 18, cor: VM },
       { t: 'texto', txt: 'L', x: 50, y: 32, tam: 15, cor: VD },
       { t: 'texto', txt: 'T', x: 22, y: 66, tam: 15, cor: VD },
       { t: 'texto', txt: 'B', x: 78, y: 66, tam: 15, cor: VD },
@@ -418,7 +406,7 @@ export const BRASOES = {
   },
   portuguesa: {
     forma: 'classico', borda: VM, fundo: { tipo: 'liso', cores: [BR] },
-    el: [{ t: 'contorno', cor: VD, larg: 5 }, { t: 'cruz-latina', x: 50, y: 62, h: 74, w: 50, l: 12, cor: VD }],
+    el: [{ t: 'contorno', cor: VD, larg: 5 }, ],
   },
   'xv-piracicaba': {
     forma: 'redondo', borda: PT, fundo: { tipo: 'liso', cores: [BR] },
@@ -443,7 +431,7 @@ export const BRASOES = {
   },
   sergipe: {
     forma: 'classico', borda: VM, fundo: { tipo: 'liso', cores: [BR] }, estrelas: [VM, VM, VM],
-    el: [{ t: 'ancora', x: 50, y: 60, s: 1.4, cor: VM }, { t: 'texto', txt: 'CSS', y: 104, tam: 11, cor: VM }],
+    el: [{ t: 'texto', txt: 'CSS', y: 104, tam: 11, cor: VM }],
   },
   uberlandia: {
     forma: 'classico', borda: VD, fundo: { tipo: 'vertical', cores: [VD, BR], n: 7 }, estrelas: [OURO],
@@ -464,7 +452,7 @@ export const BRASOES = {
     ],
   },
   santoandre: {
-    forma: 'classico', borda: VD, fundo: { tipo: 'xis', cores: [AM, VD] }, coroa: PRATA,
+    forma: 'classico', borda: VD, fundo: { tipo: 'xis', cores: [AM, VD] }, 
   },
   paulista: {
     forma: 'classico', borda: PT, fundo: { tipo: 'diagonal', cores: [BR, PT, VM], angulo: -35, largura: 9 }, estrelas: [OURO],
