@@ -13,6 +13,7 @@ import {
   montarDificil, perguntasFinaisDificil, ranquearTorcida, opostoDe, RIVAL,
 } from './torcida.js';
 import { gerarCardTorcida } from './card.js';
+import { ADSENSE } from './config.js';
 
 const app = document.getElementById('app');
 
@@ -123,6 +124,8 @@ function telaInicio() {
         </article>
       </section>
 
+      ${anuncio('inicio')}
+
       <section class="bloco wrap" id="eixos">
         <div class="bloco-cab">
           <p class="eyebrow">Como funciona</p>
@@ -193,8 +196,40 @@ function rodape() {
           <button class="btn-sec" data-acao="feedback" data-tipo="melhoria">Sugerir melhoria</button>
           <button class="btn-sec" data-acao="feedback" data-tipo="correcao">Corrigir informação</button>
         </div>
+        <p><a href="privacidade">Política de privacidade</a></p>
       </div>
     </footer>`;
+}
+
+// Bloco de anúncio do AdSense. Só aparece quando a conta e o bloco estão configurados em config.js.
+// Nunca fica dentro das perguntas, para não atrapalhar quem está jogando.
+function anuncio(local) {
+  const bloco = ADSENSE.blocos[local];
+  if (!ADSENSE.cliente || !bloco) return '';
+  return `
+    <aside class="anuncio wrap" aria-label="Publicidade">
+      <span class="anuncio-rotulo">Publicidade</span>
+      <ins class="adsbygoogle" style="display:block" data-ad-client="${esc(ADSENSE.cliente)}" data-ad-slot="${esc(bloco)}"
+        data-ad-format="auto" data-full-width-responsive="true"></ins>
+    </aside>`;
+}
+
+function ativarAnuncios() {
+  if (!ADSENSE.cliente) return;
+  const vazios = app.querySelectorAll('ins.adsbygoogle:not([data-adsbygoogle-status])');
+  if (!vazios.length) return;
+  if (!document.querySelector('script[src*="adsbygoogle.js"]')) {
+    const s = document.createElement('script');
+    s.async = true;
+    s.crossOrigin = 'anonymous';
+    s.src = `https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=${encodeURIComponent(ADSENSE.cliente)}`;
+    document.head.appendChild(s);
+  }
+  vazios.forEach(() => {
+    try {
+      (window.adsbygoogle = window.adsbygoogle || []).push({});
+    } catch { /* bloqueador de anúncios: segue sem anúncio */ }
+  });
 }
 
 // ---------------------------------------------------------------- Quiz
@@ -461,6 +496,8 @@ function telaResultado() {
           </div>
         </div>
       </section>
+
+      ${anuncio('resultado')}
 
       <section class="wrap res-correcao">
         <button class="btn-link reportar" data-acao="feedback" data-tipo="correcao" data-sobre="${esc(p.nome)} (${esc(p.id)})">Algo errado sobre ${esc(p.nome)}? Corrigir informação</button>
@@ -742,6 +779,8 @@ ${comparacao}
         </div>
       </section>
 
+      ${anuncio('resultado')}
+
       <section class="wrap res-correcao">
         ${dificil && !compartilhado ? `<button class="btn-link reportar" data-acao="feedback" data-tipo="correcao" data-sobre="Modo difícil errou: deu ${esc(c.nome)}">Não pensou em ${esc(c.nome)}? Conte em qual time você pensou</button>` : ''}
         <button class="btn-link reportar" data-acao="feedback" data-tipo="correcao" data-sobre="Modo torcida: ${esc(c.nome)} (${esc(c.id)})">Algo errado sobre ${esc(c.nome)}? Corrigir informação</button>
@@ -983,6 +1022,7 @@ const TELAS = {
 function render(tela, rolar = true) {
   estado.tela = tela;
   app.innerHTML = (TELAS[tela] || TELAS.inicio)();
+  ativarAnuncios();
   document.title = tela === 'resultado' ? `${estado.resultado.ranking[0].perfil.nome} · Prancheta`
     : tela === 'resultadoTorcida' ? `${estado.resultado.clube.nome} · Prancheta`
       : 'Prancheta';
