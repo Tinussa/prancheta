@@ -1,4 +1,4 @@
-// Times possíveis no modo "Qual time você escolheria?".
+// Times possíveis no modo "Qual time tem a sua cara?".
 // t  = posse, linha, pressao, saida, corredor, risco, liberdade (0 a 100)
 // el = estrelas, juventude, referencia
 // Identidade (massa, tradicao, modelo) e região vêm do clube.

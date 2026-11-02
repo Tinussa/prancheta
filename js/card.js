@@ -107,7 +107,7 @@ export async function gerarCard({ modo, user, ranking }) {
   ctx.fillStyle = COR.suave;
   ctx.font = `600 30px ${ROTULO}`;
   ctx.textAlign = 'right';
-  ctx.fillText((modo === 'treinador' ? 'QUAL TREINADOR VOCÊ SERIA?' : 'QUAL TIME VOCÊ ESCOLHERIA?'), W - M, 146);
+  ctx.fillText((modo === 'treinador' ? 'QUAL TREINADOR VOCÊ SERIA?' : 'QUAL TIME TEM A SUA CARA?'), W - M, 146);
   ctx.textAlign = 'left';
 
   // rótulo

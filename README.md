@@ -3,7 +3,7 @@
 Jogo de escolhas sobre tática e fundamentos do futebol brasileiro, com dois modos:
 
 - **Qual treinador você seria?** compara seu estilo com 69 treinadores que trabalharam no Brasil (Série A 2026, passagens recentes e lendas).
-- **Qual time você escolheria?** compara com os 20 clubes da Série A 2026 e 26 times históricos (campeões, vices e zebras como Santo André 2004 e Paysandu 2003), somando tática, elenco e identidade do clube.
+- **Qual time tem a sua cara?** compara com os 20 clubes da Série A 2026 e 26 times históricos (campeões, vices e zebras como Santo André 2004 e Paysandu 2003), somando tática, elenco e identidade do clube.
 
 - **Para qual time você torce?** descobre o time de coração entre 81 clubes (Séries A, B e C de 2026 e tradicionais da Série D), sem perguntar o estado direto. Tem dois modos:
   - **Modo fácil**: adivinhação estilo Akinator, perguntando quanto for preciso, com até 3 palpites.

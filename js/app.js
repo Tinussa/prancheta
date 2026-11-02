@@ -18,9 +18,9 @@ import { ADSENSE } from './config.js';
 const app = document.getElementById('app');
 
 const MODOS = {
-  treinador: { rotulo: 'Qual treinador você seria?', curto: 'Treinador', num: 1 },
-  time: { rotulo: 'Qual time você escolheria?', curto: 'Time', num: 2 },
-  torcida: { rotulo: 'Qual time você está pensando?', curto: 'Adivinhação', num: 3 },
+  treinador: { rotulo: 'Qual treinador você seria?', curto: 'Treinador', num: 3 },
+  time: { rotulo: 'Qual time tem a sua cara?', curto: 'Time', num: 2 },
+  torcida: { rotulo: 'Qual time você está pensando?', curto: 'Adivinhação', num: 1 },
 };
 
 const ESCALA = [
@@ -54,26 +54,26 @@ const num = (n) => String(n).padStart(2, '0');
 
 // Os 3 jogos: apresentados na página inicial e detalhados na tela de escolha.
 const JOGOS = {
-  treinador: {
-    num: 1,
-    nome: 'Qual treinador você seria?',
-    resumo: 'Responda como você montaria e comandaria um time e descubra com qual treinador do futebol brasileiro você mais combina.',
-    detalhe: 'Situações de jogo, formação, linha de defesa e gestão do elenco. No fim, o seu estilo é comparado com treinadores atuais, lendas e estrangeiros que marcaram o Brasil, de Telê Santana a Abel Ferreira.',
-    qtd: () => `${TREINADORES.length} treinadores`,
-  },
-  time: {
-    num: 2,
-    nome: 'Qual time você escolheria?',
-    resumo: 'Diga como gosta que um time jogue, que elenco quer ter e que clube combina com você, e veja qual time tem a sua cara.',
-    detalhe: 'Tática, perfil de elenco e identidade do clube: torcida, história e gestão. Entram os 20 clubes da Série A 2026 e times históricos, do Santos de 1962 ao Santo André de 2004.',
-    qtd: () => `${TIMES.length} times`,
-  },
   torcida: {
-    num: 3,
+    num: 1,
     nome: 'Qual time você está pensando?',
     resumo: 'Pense em um clube e responda às perguntas. A Prancheta tenta adivinhar em qual você pensou.',
     detalhe: 'Perguntas sobre história, títulos, torcida, comunidade e rivais de clubes das Séries A, B, C e D. Escolha entre a adivinhação, que pergunta até acertar, e o quiz de 15 perguntas.',
     qtd: () => `${CLUBES_TORCIDA.length} clubes`,
+  },
+  time: {
+    num: 2,
+    nome: 'Qual time tem a sua cara?',
+    resumo: 'Diga como gosta que um time jogue, que elenco quer ter e que clube combina com você, e veja qual time tem a sua cara.',
+    detalhe: 'Tática, perfil de elenco e identidade do clube: torcida, história e gestão. Entram os 20 clubes da Série A 2026 e times históricos, do Santos de 1962 ao Santo André de 2004.',
+    qtd: () => `${TIMES.length} times`,
+  },
+  treinador: {
+    num: 3,
+    nome: 'Qual treinador você seria?',
+    resumo: 'Responda como você montaria e comandaria um time e descubra com qual treinador do futebol brasileiro você mais combina.',
+    detalhe: 'Situações de jogo, formação, linha de defesa e gestão do elenco. No fim, o seu estilo é comparado com treinadores atuais, lendas e estrangeiros que marcaram o Brasil, de Telê Santana a Abel Ferreira.',
+    qtd: () => `${TREINADORES.length} treinadores`,
   },
 };
 
@@ -114,9 +114,9 @@ function telaInicio() {
       </section>
 
       <section class="modos jogos wrap" id="jogar">
-        ${jogoCard('treinador')}
-        ${jogoCard('time')}
         ${jogoCard('torcida')}
+        ${jogoCard('time')}
+        ${jogoCard('treinador')}
       </section>
 
       ${anuncio('inicio')}
@@ -818,7 +818,7 @@ ${comparacao}
           <div class="botoes botoes-fim">
             <button class="btn-sec" data-acao="${dificil ? 'dificil-iniciar' : 'torcida-iniciar'}">Jogar de novo</button>
             <button class="btn-sec" data-acao="${dificil ? 'torcida-iniciar' : 'dificil-iniciar'}">Tentar o modo ${dificil ? 'fácil' : 'difícil'}</button>
-            <button class="btn-link" data-acao="iniciar" data-modo="time" data-versao="curta" data-tema="futebol">Descobrir que time você escolheria pelo estilo</button>
+            <button class="btn-link" data-acao="iniciar" data-modo="time" data-versao="curta" data-tema="futebol">Descobrir qual time tem a sua cara</button>
           </div>
         </div>
       </section>
@@ -1150,7 +1150,7 @@ function textoCompartilhar() {
   const p = r.ranking[0];
   return r.modo === 'treinador'
     ? `Na Prancheta, meu estilo é ${p.match}% ${p.perfil.nome}. Qual treinador você seria?`
-    : `Na Prancheta, meu time é o ${p.perfil.nome} (${p.match}%). Qual time você escolheria?`;
+    : `Na Prancheta, meu time é o ${p.perfil.nome} (${p.match}%). Qual time tem a sua cara?`;
 }
 
 async function compartilhar() {
