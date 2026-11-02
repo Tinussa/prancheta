@@ -1,3 +1,5 @@
+import { BRASOES } from './brasoes.js';
+
 // Times possíveis no modo "Qual time tem a sua cara?".
 // t  = posse, linha, pressao, saida, corredor, risco, liberdade (0 a 100)
 // el = estrelas, juventude, referencia
@@ -43,6 +45,9 @@ export const CLUBES = {
   santoandre: { nome: 'Santo André', regiao: 'sp', id: [5, 15, 20], escudo: ['arredondado', 'vertical', ['#0047ab', '#ffffff', '#0047ab']] },
   paulista: { nome: 'Paulista de Jundiaí', regiao: 'sp', id: [5, 10, 30], escudo: ['classico', 'horizontal', ['#e30613', '#ffffff', '#111111']] },
 };
+
+// Desenho detalhado do brasão (js/data/brasoes.js) no lugar do escudo simples, quando existir.
+for (const [id, c] of Object.entries(CLUBES)) if (BRASOES[id]) c.escudo = BRASOES[id];
 
 const ATUAIS = [
   { clube: 'flamengo', pos: 1, pts: 73, tecnico: 'Leonardo Jardim', formacao: '4-3-3',

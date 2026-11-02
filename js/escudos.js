@@ -1,26 +1,38 @@
-// Escudos estilizados em SVG: silhueta do escudo original + cores e padrão do uniforme.
-// viewBox 0 0 100 120 para todas as silhuetas.
+// Escudos em SVG desenhados a partir da silhueta, das cores e dos elementos característicos
+// de cada brasão oficial (iniciais, estrelas, anel com o nome, cruz, coroa…). São desenhos
+// estilizados, não as marcas registradas dos clubes. As descrições ficam em js/data/brasoes.js.
+//
+// Área: viewBox 0 -16 100 136. A silhueta ocupa x 0–100, y 0–120; a faixa y −16–0 fica para o
+// que vem acima do escudo (estrelas, coroa, texto).
 
-const SILHUETAS = {
-  classico: 'M4 4 H96 V58 C96 88 74 106 50 117 C26 106 4 88 4 58 Z',
-  arredondado: 'M6 4 H94 V64 C94 92 74 116 50 116 C26 116 6 92 6 64 Z',
-  triangular: 'M2 4 H98 C97 44 78 86 50 117 C22 86 3 44 2 4 Z',
-  pentagono: 'M12 4 H88 L98 48 L50 117 L2 48 Z',
-  redondo: 'M50 12 A48 48 0 1 1 49.99 12 Z',
+const FONTE = "'Arial Black','Arial Bold',Arial,Helvetica,sans-serif";
+
+function engrenagem(cx = 50, cy = 60, rExt = 50, rInt = 42, dentes = 10) {
+  const pts = [];
+  for (let i = 0; i < dentes * 4; i++) {
+    const a = (Math.PI * 2 * i) / (dentes * 4) - Math.PI / 2;
+    const r = i % 4 < 2 ? rExt : rInt;
+    pts.push(`${(cx + r * Math.cos(a)).toFixed(1)},${(cy + r * Math.sin(a)).toFixed(1)}`);
+  }
+  return `<polygon points="${pts.join(' ')}"/>`;
+}
+
+const FORMAS = {
+  classico: '<path d="M4 2 H96 V60 C96 90 74 108 50 118 C26 108 4 90 4 60 Z"/>',
+  cantos: '<path d="M16 2 H84 Q96 2 96 14 V60 C96 90 74 108 50 118 C26 108 4 90 4 60 V14 Q4 2 16 2 Z"/>',
+  arredondado: '<path d="M6 2 H94 V66 C94 96 74 118 50 118 C26 118 6 96 6 66 Z"/>',
+  triangular: '<path d="M2 2 H98 C96 46 78 88 50 118 C22 88 4 46 2 2 Z"/>',
+  bico: '<path d="M4 2 H96 V76 L50 118 L4 76 Z"/>',
+  lobulado: '<path d="M4 12 Q27 -4 50 10 Q73 -4 96 12 V60 C96 90 74 108 50 118 C26 108 4 90 4 60 Z"/>',
+  redondo: '<circle cx="50" cy="60" r="48"/>',
+  quadrado: '<path d="M18 6 H82 Q96 6 96 20 V84 Q96 110 50 118 Q4 110 4 84 V20 Q4 6 18 6 Z"/>',
+  athletico: '<path d="M6 38 L94 4 L94 82 L54 118 L6 98 Z"/>',
+  leque: '<path d="M2 26 L50 4 L98 26 L88 100 L12 100 Z"/>',
+  engrenagem: engrenagem(),
+  trevo: '<circle cx="50" cy="27" r="25"/><circle cx="25" cy="60" r="25"/><circle cx="75" cy="60" r="25"/><circle cx="50" cy="93" r="25"/><rect x="28" y="36" width="44" height="48"/>',
 };
 
-let seq = 0;
-
-function faixas(cores, horizontal, de = 0, ate = 120) {
-  const n = cores.length > 2 ? cores.length : 7;
-  const tam = ((horizontal ? ate - de : 100) / n);
-  return Array.from({ length: n }, (_, i) => {
-    const cor = cores[i % cores.length];
-    return horizontal
-      ? `<rect x="0" y="${de + i * tam}" width="100" height="${tam + 0.5}" fill="${cor}"/>`
-      : `<rect x="${i * tam}" y="${de}" width="${tam + 0.5}" height="${ate - de}" fill="${cor}"/>`;
-  }).join('');
-}
+const txt = (t, x, y, tam, cor, extra = '') => `<text x="${x}" y="${y}" font-family="${FONTE}" font-weight="900" font-size="${tam}" fill="${cor}" text-anchor="middle" ${extra}>${t}</text>`;
 
 function estrela(cx, cy, r, cor) {
   const pts = Array.from({ length: 10 }, (_, i) => {
@@ -31,44 +43,147 @@ function estrela(cx, cy, r, cor) {
   return `<polygon points="${pts}" fill="${cor}"/>`;
 }
 
-function padrao(tipo, cores) {
-  const [a, b, c] = cores;
-  switch (tipo) {
-    case 'horizontal': return faixas(cores, true);
-    case 'vertical': return faixas(cores, false);
-    case 'vertical-topo':
-      return `<rect width="100" height="120" fill="${a}"/>${faixas([b, a, b, a, b], false, 34, 120)}`;
-    case 'diagonal':
-      return `<rect width="100" height="120" fill="${a}"/><g transform="rotate(-35 50 60)">${
-        [-40, 0, 40, 80, 120].map((x) => `<rect x="${x}" y="-40" width="20" height="200" fill="${b}"/>`).join('')}</g>`;
+function faixas(cores, horizontal, n) {
+  const qtd = n || (cores.length > 2 ? cores.length : 7);
+  const tam = (horizontal ? 120 : 100) / qtd;
+  return Array.from({ length: qtd }, (_, i) => {
+    const cor = cores[i % cores.length];
+    return horizontal
+      ? `<rect x="0" y="${(i * tam).toFixed(2)}" width="100" height="${(tam + 0.4).toFixed(2)}" fill="${cor}"/>`
+      : `<rect x="${(i * tam).toFixed(2)}" y="0" width="${(tam + 0.4).toFixed(2)}" height="120" fill="${cor}"/>`;
+  }).join('');
+}
+
+function fundo(f) {
+  const [a, b] = f.cores;
+  switch (f.tipo) {
+    case 'vertical': return faixas(f.cores, false, f.n);
+    case 'horizontal': return faixas(f.cores, true, f.n);
+    case 'diagonal': {
+      const w = f.largura || 12;
+      const listras = [];
+      for (let x = -120, i = 0; x < 220; x += w, i++) listras.push(`<rect x="${x}" y="-60" width="${w + 0.4}" height="260" fill="${f.cores[i % f.cores.length]}"/>`);
+      return `<g transform="rotate(${f.angulo ?? -35} 50 60)">${listras.join('')}</g>`;
+    }
     case 'faixa':
-      return `<rect width="100" height="120" fill="${a}"/>
-        <polygon points="0,18 0,40 100,100 100,78" fill="${b}"/>
-        ${c ? `<path d="M70 14 h10 v10 h10 v10 h-10 v10 h-10 v-10 h-10 v-10 h10 z" fill="${c}"/>` : ''}`;
-    case 'estrela':
-      return `<rect width="100" height="120" fill="${a}"/>${estrela(50, 58, 26, b)}`;
-    case 'cruzeiro':
-      return `<rect width="100" height="120" fill="${a}"/>
-        ${estrela(50, 34, 9, b)}${estrela(50, 88, 9, b)}${estrela(28, 60, 8, b)}${estrela(72, 56, 8, b)}${estrela(60, 72, 5, b)}`;
-    case 'anel':
-      return `<rect width="100" height="120" fill="${a}"/>
-        <circle cx="50" cy="60" r="36" fill="none" stroke="${b}" stroke-width="5"/>
-        <circle cx="50" cy="60" r="18" fill="${b}"/>`;
+      return `<rect width="100" height="120" fill="${a}"/><polygon points="0,10 0,36 100,104 100,78" fill="${b}"/>`;
+    case 'xis':
+      return `<rect width="100" height="120" fill="${a}"/><g stroke="${b}" stroke-width="20"><line x1="0" y1="0" x2="100" y2="120"/><line x1="100" y1="0" x2="0" y2="120"/></g>`;
     case 'metade':
       return `<rect width="50" height="120" fill="${a}"/><rect x="50" width="50" height="120" fill="${b}"/>`;
+    case 'diagonal-metade':
+      return `<rect width="100" height="120" fill="${b}"/><polygon points="0,0 100,0 0,120" fill="${a}"/>`;
     case 'liso':
     default:
-      return `<rect width="100" height="120" fill="${a}"/><rect x="18" y="20" width="64" height="9" fill="${b}"/>`;
+      return `<rect width="100" height="120" fill="${a}"/>`;
   }
 }
 
-export function escudoSVG(escudo, classe = 'escudo') {
+function aneltexto(id, r, tam, cor, texto) {
+  const p = `M${50 - r},60 A${r},${r} 0 1 1 ${50 + r},60 A${r},${r} 0 1 1 ${50 - r},60`;
+  return `<path id="${id}" d="${p}" fill="none"/>
+    <text font-family="${FONTE}" font-weight="900" font-size="${tam}" fill="${cor}" letter-spacing="0.4"><textPath href="#${id}" startOffset="25%" text-anchor="middle">${texto}</textPath></text>`;
+}
+
+function ancora(x, y, s, cor) {
+  return `<g transform="translate(${x} ${y}) scale(${s})" fill="none" stroke="${cor}" stroke-width="4" stroke-linecap="round">
+    <circle cx="0" cy="-22" r="5"/><line x1="0" y1="-17" x2="0" y2="20"/><line x1="-12" y1="-8" x2="12" y2="-8"/>
+    <path d="M-20 8 Q-18 24 0 22 Q18 24 20 8"/></g>`;
+}
+
+function elemento(e, id) {
+  switch (e.t) {
+    case 'texto':
+      return txt(e.txt, e.x ?? 50, e.y, e.tam, e.cor,
+        `${e.contorno ? `stroke="${e.contorno}" stroke-width="${e.borda ?? 1.4}" paint-order="stroke"` : ''} ${e.rot ? `transform="rotate(${e.rot} ${e.x ?? 50} ${e.y})"` : ''}`);
+    case 'topo':
+      return `<rect x="0" y="0" width="100" height="${e.alt}" fill="${e.cor}"/>${e.txt ? txt(e.txt, 50, e.alt * 0.72, e.tam, e.corTxt) : ''}`;
+    case 'banda':
+      return `<rect x="0" y="${e.y}" width="100" height="${e.h}" fill="${e.cor}"/>${e.txt ? txt(e.txt, 50, e.y + e.h * 0.74, e.tam, e.corTxt) : ''}`;
+    case 'faixa-texto':
+      return `<g transform="rotate(${e.ang ?? -18} 50 ${e.y})"><rect x="-20" y="${e.y - e.h / 2}" width="140" height="${e.h}" fill="${e.cor}"/>${txt(e.txt, 50, e.y + e.tam * 0.36, e.tam, e.corTxt)}</g>`;
+    case 'anel': {
+      const tam = e.txt ? Math.min(e.larg * 0.72, (Math.PI * e.r * 1.8) / (e.txt.length * 0.66)) : 0;
+      return `<circle cx="50" cy="60" r="${e.r}" fill="none" stroke="${e.cor}" stroke-width="${e.larg}"/>
+        ${e.txt ? aneltexto(`${id}-anel`, e.r - tam * 0.34, tam.toFixed(1), e.corTxt, e.txt) : ''}`;
+    }
+    case 'disco': {
+      const clip = `${id}-d${Math.round(e.x ?? 50)}${Math.round(e.y ?? 60)}`;
+      const listras = e.listras
+        ? `<defs><clipPath id="${clip}"><circle cx="${e.x ?? 50}" cy="${e.y ?? 60}" r="${e.r}"/></clipPath></defs><g clip-path="url(#${clip})">${faixas(e.listras, e.horizontal, e.n)}</g>`
+        : '';
+      return `<circle cx="${e.x ?? 50}" cy="${e.y ?? 60}" r="${e.r}" fill="${e.cor || 'none'}" ${e.contorno ? `stroke="${e.contorno}" stroke-width="${e.borda ?? 3}"` : ''}/>${listras}`;
+    }
+    case 'oval':
+      return `<ellipse cx="${e.x ?? 50}" cy="${e.y ?? 60}" rx="${e.rx}" ry="${e.ry}" fill="${e.cor}"/>`;
+    case 'estrela':
+      return estrela(e.x ?? 50, e.y ?? 60, e.r, e.cor);
+    case 'cruzeiro':
+      return [[50, 38, 7], [50, 84, 7], [32, 62, 6], [68, 58, 6], [60, 72, 4]].map(([x, y, r]) => estrela(x, y, r, e.cor)).join('');
+    case 'cruz-patea': {
+      const { x = 50, y = 60, r, cor } = e;
+      const braco = (rot) => `<path d="M0 0 L${-r * 0.34} ${-r} L${r * 0.34} ${-r} Z" transform="translate(${x} ${y}) rotate(${rot})" fill="${cor}"/>`;
+      return `${[0, 90, 180, 270].map(braco).join('')}<circle cx="${x}" cy="${y}" r="${r * 0.22}" fill="${cor}"/>`;
+    }
+    case 'cruz-latina': {
+      const { x = 50, y = 60, h, w, cor, l = 9 } = e;
+      return `<rect x="${x - l / 2}" y="${y - h / 2}" width="${l}" height="${h}" fill="${cor}"/><rect x="${x - w / 2}" y="${y - h / 2 + h * 0.24}" width="${w}" height="${l}" fill="${cor}"/>`;
+    }
+    case 'cruz-sg':
+      return `<rect x="43" y="0" width="14" height="${e.ate ?? 120}" fill="${e.cor}"/><rect x="0" y="${e.y ?? 26}" width="100" height="14" fill="${e.cor}"/>`;
+    case 'ancora':
+      return ancora(e.x ?? 50, e.y ?? 64, e.s ?? 1, e.cor);
+    case 'raio':
+      return `<polyline points="58,30 40,62 56,62 38,96" fill="none" stroke="${e.cor}" stroke-width="5" stroke-linejoin="round"/>`;
+    case 'bola':
+      return `<circle cx="${e.x}" cy="${e.y}" r="${e.r}" fill="#ffffff" stroke="#111111" stroke-width="1.2"/>${estrela(e.x, e.y, e.r * 0.42, '#111111')}`;
+    case 'poligono':
+      return `<polygon points="${e.pts}" fill="${e.cor}"/>`;
+    case 'contorno':
+      return `<g fill="none" stroke="${e.cor}" stroke-width="${e.larg ?? 6}">${e.forma}</g>`;
+    default:
+      return '';
+  }
+}
+
+function acima(spec) {
+  const partes = [];
+  const ests = spec.estrelas || [];
+  const passo = 13;
+  ests.forEach((cor, i) => partes.push(estrela(50 + (i - (ests.length - 1) / 2) * passo, -7, 5.5, cor)));
+  if (spec.coroa) {
+    partes.push(`<path d="M34 -2 L36 -14 L43 -7 L50 -15 L57 -7 L64 -14 L66 -2 Z" fill="${spec.coroa}"/>`);
+  }
+  if (spec.textoAcima) {
+    const { txt: t, cor, tam = 10, x = 50 } = spec.textoAcima;
+    partes.push(txt(t, x, -3, tam, cor));
+  }
+  return partes.join('');
+}
+
+// Converte o formato antigo [forma, padrão, cores] para o novo.
+function normalizar(escudo) {
+  if (!Array.isArray(escudo)) return escudo;
   const [forma, tipo, cores] = escudo;
+  const t = { horizontal: 'horizontal', vertical: 'vertical', diagonal: 'diagonal', metade: 'metade', faixa: 'faixa' }[tipo] || 'liso';
+  return { forma, fundo: { tipo: t, cores } };
+}
+
+let seq = 0;
+
+export function escudoSVG(escudo, classe = 'escudo') {
+  const spec = normalizar(escudo);
   const id = `esc${++seq}`;
-  const d = SILHUETAS[forma] || SILHUETAS.classico;
-  return `<svg class="${classe}" viewBox="0 0 100 120" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
-    <defs><clipPath id="${id}"><path d="${d}"/></clipPath></defs>
-    <g clip-path="url(#${id})">${padrao(tipo, cores)}</g>
-    <path d="${d}" fill="none" stroke="rgba(238,242,234,0.55)" stroke-width="3"/>
+  const forma = FORMAS[spec.forma] || FORMAS.classico;
+  const borda = spec.borda || 'rgba(238,242,234,0.6)';
+  const atras = (spec.atras || []).map((e) => elemento(e, id)).join('');
+  const dentro = (spec.el || []).map((e) => elemento(e.t === 'contorno' ? { ...e, forma } : e, id)).join('');
+  return `<svg class="${classe}" viewBox="0 -16 100 136" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+    <defs><clipPath id="${id}">${forma}</clipPath></defs>
+    ${atras}
+    <g fill="rgba(238,242,234,0.35)" stroke="rgba(238,242,234,0.35)" stroke-width="9">${forma}</g>
+    <g fill="${borda}" stroke="${borda}" stroke-width="6">${forma}</g>
+    <g clip-path="url(#${id})">${fundo(spec.fundo)}${dentro}</g>
+    ${acima(spec)}
   </svg>`;
 }

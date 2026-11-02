@@ -1,5 +1,6 @@
 import { CLUBES_TORCIDA, REGIAO_UF, DOZE_GRANDES, DEZ_MAIORES_TORCIDAS } from './data/torcida.js';
 import { CLUBES, TIMES } from './data/times.js';
+import { BRASOES } from './data/brasoes.js';
 
 // Modo "Qual time você está pensando?": adivinhação no estilo Akinator.
 // Cada clube começa com uma probabilidade (torcidas maiores pesam mais). Cada resposta multiplica a
@@ -358,6 +359,7 @@ const HEX = {
 };
 
 export function escudoDoClube(c) {
+  if (BRASOES[c.id]) return BRASOES[c.id];
   if (CLUBES[c.id]) return CLUBES[c.id].escudo;
   if (!c.cores) return ['classico', 'liso', ['#4a5a52', '#eef2ea']];
   const cores = c.cores.map((x) => HEX[x]);
