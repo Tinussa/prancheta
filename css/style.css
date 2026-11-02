@@ -293,6 +293,10 @@ p { margin: 0; }
 .texto-legal ul { margin: 0; padding-left: 1.2em; display: grid; gap: 8px; }
 .texto-legal .btn-sec { display: inline-block; text-decoration: none; margin-top: 12px; }
 
+/* atalho do card no topo do resultado */
+.res-acoes { margin-top: 4px; }
+.res-txt .aviso:empty { display: none; }
+
 /* anúncios */
 .anuncio { display: grid; gap: 6px; padding-block: 8px; }
 .anuncio-rotulo { font: 600 0.72rem/1 var(--f-label); letter-spacing: 0.14em; text-transform: uppercase; color: var(--muted); }

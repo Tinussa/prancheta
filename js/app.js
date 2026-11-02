@@ -444,6 +444,11 @@ function telaResultado() {
           <p class="res-titulos">${esc(p.titulos)}${p.destaque ? ` · ${esc(p.destaque)}` : ''}</p>
           <p class="res-estilo">${esc(p.estilo)}</p>
           ${estrelasHTML(p)}
+          <div class="botoes res-acoes">
+            <button class="btn-pri" data-acao="baixar-card">Baixar card</button>
+            <button class="btn-sec" data-acao="compartilhar">Compartilhar</button>
+          </div>
+          <p class="aviso" role="status"></p>
         </div>
         <div class="res-placar" aria-label="${top.match}% de compatibilidade">
           <span class="res-pct tabnum">${top.match}<small>%</small></span>
@@ -488,7 +493,7 @@ function telaResultado() {
             <button class="btn-sec" data-acao="compartilhar">Compartilhar</button>
             <button class="btn-sec" data-acao="copiar-link">Copiar link</button>
           </div>
-          <p class="aviso" id="aviso" role="status"></p>
+          <p class="aviso" role="status"></p>
           <div class="botoes botoes-fim">
             <button class="btn-sec" data-acao="iniciar" data-modo="${outro}" data-versao="curta" data-tema="${estado.tema}">Jogar o modo ${MODOS[outro].curto.toLowerCase()} →</button>
             <button class="btn-link" data-acao="iniciar" data-modo="${modo}" data-versao="completa" data-tema="${estado.tema}">Refazer na versão completa</button>
@@ -746,6 +751,11 @@ function telaResultadoTorcida() {
           </div>
           <p class="res-meta">${esc(c.cidade)} · ${esc(c.uf)} <span class="pill">Série ${c.serie} em 2026</span></p>
           <p class="res-estilo">${esc(frase)}</p>
+          <div class="botoes res-acoes">
+            <button class="btn-pri" data-acao="baixar-card">Baixar card</button>
+            <button class="btn-sec" data-acao="compartilhar">Compartilhar</button>
+          </div>
+          <p class="aviso" role="status"></p>
         </div>
         ${placar}
       </section>
@@ -770,7 +780,7 @@ ${comparacao}
             <button class="btn-sec" data-acao="compartilhar">Compartilhar</button>
             <button class="btn-sec" data-acao="copiar-link">Copiar link</button>
           </div>
-          <p class="aviso" id="aviso" role="status"></p>
+          <p class="aviso" role="status"></p>
           <div class="botoes botoes-fim">
             <button class="btn-sec" data-acao="${dificil ? 'dificil-iniciar' : 'torcida-iniciar'}">Jogar de novo</button>
             <button class="btn-sec" data-acao="${dificil ? 'torcida-iniciar' : 'dificil-iniciar'}">Tentar o modo ${dificil ? 'fácil' : 'difícil'}</button>
@@ -1082,8 +1092,7 @@ function limparUrl() {
 }
 
 function aviso(txt) {
-  const el = document.getElementById('aviso');
-  if (el) el.textContent = txt;
+  app.querySelectorAll('.aviso').forEach((el) => { el.textContent = txt; });
 }
 
 function linkResultado() {
