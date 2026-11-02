@@ -1,5 +1,5 @@
 // Brasões estilizados de cada clube, desenhados a partir do escudo oficial (silhueta, cores,
-// iniciais, estrelas e símbolos característicos). Referência: imagens dos escudos nas páginas
+// estrelas e símbolos característicos; letras e iniciais não são desenhadas). Referência: imagens dos escudos nas páginas
 // dos clubes na Wikipédia em português (consultadas em 02/11/2026). Não reproduzem as marcas.
 //
 // forma:  classico | cantos | arredondado | triangular | bico | lobulado | redondo | quadrado |

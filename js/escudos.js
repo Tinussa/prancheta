@@ -1,11 +1,10 @@
 // Escudos em SVG desenhados a partir da silhueta, das cores e dos elementos característicos
-// de cada brasão oficial (iniciais, estrelas, anel com o nome, cruz, coroa…). São desenhos
+// de cada brasão oficial (estrelas, anéis, cruz, coroa…). Letras e iniciais ficam de fora:
+// os textos descritos em js/data/brasoes.js são ignorados no desenho. São desenhos
 // estilizados, não as marcas registradas dos clubes. As descrições ficam em js/data/brasoes.js.
 //
 // Área: viewBox 0 -16 100 136. A silhueta ocupa x 0–100, y 0–120; a faixa y −16–0 fica para o
 // que vem acima do escudo (estrelas, coroa, texto).
-
-const FONTE = "'Arial Black','Arial Bold',Arial,Helvetica,sans-serif";
 
 function engrenagem(cx = 50, cy = 60, rExt = 50, rInt = 42, dentes = 10) {
   const pts = [];
@@ -32,7 +31,6 @@ const FORMAS = {
   trevo: '<circle cx="50" cy="27" r="25"/><circle cx="25" cy="60" r="25"/><circle cx="75" cy="60" r="25"/><circle cx="50" cy="93" r="25"/><rect x="28" y="36" width="44" height="48"/>',
 };
 
-const txt = (t, x, y, tam, cor, extra = '') => `<text x="${x}" y="${y}" font-family="${FONTE}" font-weight="900" font-size="${tam}" fill="${cor}" text-anchor="middle" ${extra}>${t}</text>`;
 
 function estrela(cx, cy, r, cor) {
   const pts = Array.from({ length: 10 }, (_, i) => {
@@ -79,11 +77,6 @@ function fundo(f) {
   }
 }
 
-function aneltexto(id, r, tam, cor, texto) {
-  const p = `M${50 - r},60 A${r},${r} 0 1 1 ${50 + r},60 A${r},${r} 0 1 1 ${50 - r},60`;
-  return `<path id="${id}" d="${p}" fill="none"/>
-    <text font-family="${FONTE}" font-weight="900" font-size="${tam}" fill="${cor}" letter-spacing="0.4"><textPath href="#${id}" startOffset="25%" text-anchor="middle">${texto}</textPath></text>`;
-}
 
 function ancora(x, y, s, cor) {
   return `<g transform="translate(${x} ${y}) scale(${s})" fill="none" stroke="${cor}" stroke-width="4" stroke-linecap="round">
@@ -94,19 +87,16 @@ function ancora(x, y, s, cor) {
 function elemento(e, id) {
   switch (e.t) {
     case 'texto':
-      return txt(e.txt, e.x ?? 50, e.y, e.tam, e.cor,
-        `${e.contorno ? `stroke="${e.contorno}" stroke-width="${e.borda ?? 1.4}" paint-order="stroke"` : ''} ${e.rot ? `transform="rotate(${e.rot} ${e.x ?? 50} ${e.y})"` : ''}`);
+      return '';
     case 'topo':
-      return `<rect x="0" y="0" width="100" height="${e.alt}" fill="${e.cor}"/>${e.txt ? txt(e.txt, 50, e.alt * 0.72, e.tam, e.corTxt) : ''}`;
+      return `<rect x="0" y="0" width="100" height="${e.alt}" fill="${e.cor}"/>`;
     case 'banda':
-      return `<rect x="0" y="${e.y}" width="100" height="${e.h}" fill="${e.cor}"/>${e.txt ? txt(e.txt, 50, e.y + e.h * 0.74, e.tam, e.corTxt) : ''}`;
+      return `<rect x="0" y="${e.y}" width="100" height="${e.h}" fill="${e.cor}"/>`;
     case 'faixa-texto':
-      return `<g transform="rotate(${e.ang ?? -18} 50 ${e.y})"><rect x="-20" y="${e.y - e.h / 2}" width="140" height="${e.h}" fill="${e.cor}"/>${txt(e.txt, 50, e.y + e.tam * 0.36, e.tam, e.corTxt)}</g>`;
-    case 'anel': {
-      const tam = e.txt ? Math.min(e.larg * 0.72, (Math.PI * e.r * 1.8) / (e.txt.length * 0.66)) : 0;
+      return `<g transform="rotate(${e.ang ?? -18} 50 ${e.y})"><rect x="-20" y="${e.y - e.h / 2}" width="140" height="${e.h}" fill="${e.cor}"/></g>`;
+    case 'anel':
       return `<circle cx="50" cy="60" r="${e.r}" fill="none" stroke="${e.cor}" stroke-width="${e.larg}"/>
-        ${e.txt ? aneltexto(`${id}-anel`, e.r - tam * 0.34, tam.toFixed(1), e.corTxt, e.txt) : ''}`;
-    }
+        ${e.txt ? `<circle cx="50" cy="60" r="${e.r}" fill="none" stroke="${e.corTxt}" stroke-width="1.2" stroke-dasharray="2 3" opacity="0.6"/>` : ''}`;
     case 'disco': {
       const clip = `${id}-d${Math.round(e.x ?? 50)}${Math.round(e.y ?? 60)}`;
       const listras = e.listras
@@ -153,10 +143,6 @@ function acima(spec) {
   ests.forEach((cor, i) => partes.push(estrela(50 + (i - (ests.length - 1) / 2) * passo, -7, 5.5, cor)));
   if (spec.coroa) {
     partes.push(`<path d="M34 -2 L36 -14 L43 -7 L50 -15 L57 -7 L64 -14 L66 -2 Z" fill="${spec.coroa}"/>`);
-  }
-  if (spec.textoAcima) {
-    const { txt: t, cor, tam = 10, x = 50 } = spec.textoAcima;
-    partes.push(txt(t, x, -3, tam, cor));
   }
   return partes.join('');
 }
