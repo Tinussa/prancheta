@@ -153,7 +153,7 @@ p { margin: 0; }
   cursor: pointer;
   transition: fill 0.15s ease;
 }
-.campo .zona:hover { fill: rgba(255, 210, 63, 0.16); }
+@media (hover: hover) { .campo .zona:hover { fill: rgba(255, 210, 63, 0.16); } }
 .campo .zona.sel { fill: rgba(255, 210, 63, 0.38); stroke: var(--accent); stroke-dasharray: none; }
 
 /* ------------------------------------------------------------ modos */
@@ -200,7 +200,7 @@ p { margin: 0; }
 }
 .versao b { font: 800 1.45rem/1 var(--f-display); text-transform: uppercase; }
 .versao span { font: 500 0.9rem/1.3 var(--f-label); letter-spacing: 0.04em; color: var(--muted); }
-.versao:hover { border-color: var(--accent); transform: translateY(-1px); }
+@media (hover: hover) { .versao:hover { border-color: var(--accent); transform: translateY(-1px); } }
 .versao-forte { background: var(--accent); border-color: var(--accent); color: var(--accent-ink); }
 .versao-forte span { color: rgba(26, 20, 0, 0.75); }
 @media (max-width: 380px) { .versoes { grid-template-columns: minmax(0, 1fr); } }
@@ -228,10 +228,10 @@ p { margin: 0; }
   background: none; border: 0; padding: 2px 4px; line-height: 1;
   font-size: 2rem; color: var(--line); transition: color 0.12s ease, transform 0.12s ease;
 }
-.estrelas:hover .estrela { color: var(--accent); }
-.estrelas .estrela:hover ~ .estrela { color: var(--line); }
+@media (hover: hover) { .estrelas:hover .estrela { color: var(--accent); } }
+@media (hover: hover) { .estrelas .estrela:hover ~ .estrela { color: var(--line); } }
 .estrela.on { color: var(--accent); }
-.estrela:hover { transform: scale(1.12); }
+@media (hover: hover) { .estrela:hover { transform: scale(1.12); } }
 .avaliacao-rotulo { margin-left: 10px; font: 600 0.95rem/1.2 var(--f-label); letter-spacing: 0.06em; color: var(--accent); }
 
 /* modo torcida */
@@ -253,7 +253,7 @@ p { margin: 0; }
   background: var(--surface); border: 1px solid var(--line); border-radius: var(--r);
   font: 700 1rem/1.2 var(--f-label); letter-spacing: 0.04em;
 }
-.escolher-item:hover { border-color: var(--accent); }
+@media (hover: hover) { .escolher-item:hover { border-color: var(--accent); } }
 .escolher-item .escudo { width: 30px; height: 41px; }
 .escolher-select select {
   font: 400 1rem/1.4 var(--f-body); letter-spacing: 0; text-transform: none; color: var(--fg);
@@ -271,7 +271,7 @@ p { margin: 0; }
 .mapa { width: 100%; max-width: 420px; height: auto; }
 .mapa .regiao { cursor: pointer; }
 .mapa .regiao polygon { fill: var(--grass-a); stroke: var(--chalk); stroke-width: 0.6; transition: fill 0.15s ease; }
-.mapa .regiao:hover polygon { fill: var(--grass-b); stroke: var(--accent); }
+@media (hover: hover) { .mapa .regiao:hover polygon { fill: var(--grass-b); stroke: var(--accent); } }
 .mapa .regiao.sel polygon { fill: var(--accent); stroke: var(--accent); }
 .mapa .regiao text { font: 700 4.2px var(--f-label); letter-spacing: 0.04em; fill: var(--fg); text-anchor: middle; pointer-events: none; text-transform: uppercase; }
 .mapa .regiao.sel text { fill: var(--accent-ink); }
@@ -426,7 +426,7 @@ body::before {
   font-size: 1.04rem; line-height: 1.35;
   transition: border-color 0.12s ease, background 0.12s ease;
 }
-.op:hover { border-color: var(--muted); }
+@media (hover: hover) { .op:hover { border-color: var(--muted); } }
 .op.sel { border-color: var(--accent); background: var(--surface-2); }
 .op-letra {
   flex: none; width: 30px; height: 30px; display: grid; place-items: center;
@@ -448,7 +448,7 @@ body::before {
 }
 .op-escala[data-nivel="0"] i, .op-escala[data-nivel="4"] i { width: 24px; height: 24px; }
 .op-escala[data-nivel="2"] i { width: 12px; height: 12px; }
-.op-escala:hover { border-color: var(--muted); }
+@media (hover: hover) { .op-escala:hover { border-color: var(--muted); } }
 .op-escala.sel { border-color: var(--accent); }
 .op-escala.sel i { background: var(--accent); border-color: var(--accent); }
 @media (min-width: 720px) {
@@ -481,7 +481,7 @@ body::before {
   background: var(--surface); border: 1px solid var(--line);
   font: 700 1.05rem/1 var(--f-label); letter-spacing: 0.05em;
 }
-.chip-form:hover { border-color: var(--muted); }
+@media (hover: hover) { .chip-form:hover { border-color: var(--muted); } }
 .chip-form.sel { background: var(--accent); color: var(--accent-ink); border-color: var(--accent); }
 
 .acao-slider { display: grid; gap: 14px; }

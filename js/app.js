@@ -856,14 +856,26 @@ function chutar() {
   render('palpite');
 }
 
-function responderTorcida(valor) {
+// Converte o valor do botão na resposta da pergunta; undefined quando o valor não é dela.
+function respostaDe(q, valor) {
+  if (valor === 'nao-sei') return null;
+  if (q.tipo === 'sn') return RESPOSTAS_SN.find((r) => r.id === valor)?.v;
+  if (q.opcoes) return q.opcoes.some(([id]) => id === valor) ? valor : undefined;
+  return valor;
+}
+
+function responderTorcida(q, valor) {
   const t = estado.torcida;
-  const q = t.atual;
-  let resposta = null;
-  if (q.tipo === 'sn') resposta = RESPOSTAS_SN.find((r) => r.id === valor).v;
-  else if (valor !== 'nao-sei') resposta = valor;
+  const resposta = respostaDe(q, valor);
+  if (q !== t.atual || resposta === undefined) return render('torcida', false);
   t.historico.push({ pergunta: q, resposta, valor });
-  avancarTorcida();
+  try {
+    avancarTorcida();
+  } catch (e) {
+    // Sem próxima pergunta possível: arrisca o palpite em vez de travar na tela.
+    console.error(e);
+    chutar();
+  }
 }
 
 function resultadoTorcida(clube, acertou, compartilhado = false, perguntas = estado.torcida?.historico.length || 0) {
@@ -1064,7 +1076,43 @@ const TELAS = {
   resultadoTorcida: () => telaResultadoTorcida(),
 };
 
+// Cada tela aceita uma resposta só: o primeiro toque trava as outras opções até a próxima tela, e
+// um toque que chega logo depois de a tela trocar (o segundo toque de um toque duplo) é ignorado
+// para não responder a pergunta seguinte sem querer.
+const TOQUE_DUPLO_MS = 300;
+const toque = { tela: 0, em: 0, travado: false };
+
+function podeTocar() {
+  return !toque.travado && performance.now() - toque.em > TOQUE_DUPLO_MS;
+}
+
+function responderUmaVez(el, fn, ms) {
+  if (!podeTocar()) return;
+  toque.travado = true;
+  el.classList.add('sel');
+  const tela = toque.tela;
+  setTimeout(() => {
+    if (tela !== toque.tela) return; // a tela mudou antes (voltar, sair): descarta
+    try {
+      fn();
+    } catch (e) {
+      console.error(e);
+      render(estado.tela, false);
+    }
+  }, ms);
+}
+
+// Redesenha a mesma pergunta (rascunho, cores): não conta como tela nova para o toque duplo.
+function redesenhar(tela) {
+  const em = toque.em;
+  render(tela, false);
+  toque.em = em;
+}
+
 function render(tela, rolar = true) {
+  toque.tela += 1;
+  toque.em = performance.now();
+  toque.travado = false;
   estado.tela = tela;
   app.innerHTML = (TELAS[tela] || TELAS.inicio)();
   ativarAnuncios();
@@ -1232,26 +1280,28 @@ app.addEventListener('click', (ev) => {
       iniciarDificil();
       break;
     case 'dificil-responder': {
-      const q = estado.dificil.perguntas[estado.dificil.idx];
+      const d = estado.dificil;
+      const idx = d.idx;
       const v = el.dataset.valor;
-      const resposta = q.tipo === 'sn' ? RESPOSTAS_SN.find((r) => r.id === v).v : v === 'nao-sei' ? null : v;
-      el.classList.add('sel');
-      setTimeout(() => registrarDificil(resposta, v), 140);
+      const resposta = respostaDe(d.perguntas[idx], v);
+      if (resposta === undefined) break;
+      responderUmaVez(el, () => { if (d === estado.dificil && d.idx === idx) registrarDificil(resposta, v); }, 140);
       break;
     }
     case 'dificil-rascunho':
       estado.dificil.rascunho = el.dataset.valor;
-      render('dificil', false);
+      redesenhar('dificil');
       break;
     case 'dificil-cor': {
       const d = estado.dificil;
       const c = el.dataset.valor;
       if (d.rascunho.includes(c)) d.rascunho = d.rascunho.filter((x) => x !== c);
       else if (d.rascunho.length < 3) d.rascunho = [...d.rascunho, c];
-      render('dificil', false);
+      redesenhar('dificil');
       break;
     }
     case 'dificil-confirmar': {
+      if (!podeTocar()) break;
       const d = estado.dificil;
       const q = d.perguntas[d.idx];
       const r = q.ui === 'cores' ? [...d.rascunho] : d.rascunho;
@@ -1260,28 +1310,38 @@ app.addEventListener('click', (ev) => {
     }
     case 'dificil-voltar': {
       const d = estado.dificil;
-      if (d.idx === 0) break;
+      if (d.idx === 0 || !podeTocar()) break;
       d.idx -= 1;
       d.rascunho = null;
       if (d.perguntas.length > TOTAL_DIFICIL - 2 && d.idx < TOTAL_DIFICIL - 2) d.perguntas.length = TOTAL_DIFICIL - 2;
       render('dificil', false);
       break;
     }
-    case 'torcida-responder':
-      el.classList.add('sel');
-      setTimeout(() => responderTorcida(el.dataset.valor), 140);
+    case 'torcida-responder': {
+      const q = estado.torcida.atual;
+      const v = el.dataset.valor;
+      responderUmaVez(el, () => responderTorcida(q, v), 140);
       break;
-    case 'torcida-voltar':
-      estado.torcida.historico.pop();
-      avancarTorcida();
+    }
+    case 'torcida-voltar': {
+      // Volta para a pergunta anterior (e não para uma nova sorteada).
+      if (!podeTocar()) break;
+      const t = estado.torcida;
+      const ultima = t.historico.pop();
+      if (ultima) {
+        t.atual = ultima.pergunta;
+        render('torcida', false);
+      }
       break;
+    }
     case 'torcida-chutar':
-      chutar();
+      if (podeTocar()) chutar();
       break;
     case 'palpite-sim':
-      resultadoTorcida(estado.torcida.palpite, true);
+      if (podeTocar()) resultadoTorcida(estado.torcida.palpite, true);
       break;
     case 'palpite-nao': {
+      if (!podeTocar()) break;
       const t = estado.torcida;
       t.eliminados.add(t.palpite.id);
       t.limite = Math.max(t.limite, t.historico.length + EXTRA_APOS_ERRO);
@@ -1309,21 +1369,21 @@ app.addEventListener('click', (ev) => {
       break;
     }
     case 'responder': {
-      const q = estado.perguntas[estado.idx];
+      const idx = estado.idx;
+      const q = estado.perguntas[idx];
       const v = q.tipo === 'regiao' ? el.dataset.valor : Number(el.dataset.valor);
-      el.classList.add('sel');
-      setTimeout(() => registrar(v), 160);
+      responderUmaVez(el, () => { if (estado.idx === idx && estado.perguntas[idx] === q) registrar(v); }, 160);
       break;
     }
     case 'rascunho':
       estado.rascunho = Number(el.dataset.valor);
-      render('quiz', false);
+      redesenhar('quiz');
       break;
     case 'confirmar':
-      if (estado.rascunho !== null) registrar(estado.rascunho);
+      if (estado.rascunho !== null && podeTocar()) registrar(estado.rascunho);
       break;
     case 'voltar':
-      if (estado.idx > 0) {
+      if (estado.idx > 0 && podeTocar()) {
         estado.idx--;
         estado.rascunho = null;
         render('quiz', false);
@@ -1398,7 +1458,7 @@ document.addEventListener('keydown', (ev) => {
   if (ev.altKey || ev.ctrlKey || ev.metaKey) return;
   if (ev.target.matches('input, textarea, select') || document.querySelector('dialog[open]')) return;
   if (estado.tela === 'torcida' || estado.tela === 'dificil') {
-    const botoes = app.querySelectorAll('[data-acao="torcida-responder"], [data-acao="dificil-responder"]');
+    const botoes = app.querySelectorAll('.op[data-acao$="-responder"], .op-escala[data-acao$="-responder"]');
     const n = Number(ev.key);
     if (n >= 1 && n <= botoes.length) botoes[n - 1].click();
     return;
@@ -1406,6 +1466,7 @@ document.addEventListener('keydown', (ev) => {
   if (estado.tela !== 'quiz') return;
   const q = estado.perguntas[estado.idx];
   const n = Number(ev.key);
+  if (!podeTocar()) return;
   if (q.tipo === 'escala' && n >= 1 && n <= 5) registrar(ESCALA[n - 1].v);
   else if (q.tipo === 'escolha' && n >= 1 && n <= q.opcoes.length) registrar(n - 1);
   else if (ev.key === 'Enter' && precisaConfirmar(q) && estado.rascunho !== null) registrar(estado.rascunho);
