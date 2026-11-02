@@ -605,3 +605,28 @@ body::before {
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { animation: none !important; transition: none !important; scroll-behavior: auto !important; }
 }
+
+/* página inicial com os 3 jogos */
+.hero-simples { grid-template-columns: minmax(0, 1fr) !important; padding-block: 48px 24px; }
+.hero-simples .lead { max-width: 40em; }
+@media (min-width: 800px) { .jogos { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
+.jogo { grid-template-rows: auto auto 1fr auto; }
+.jogo p { align-self: start; }
+.jogo-btn { justify-self: start; margin-top: 6px; }
+
+/* tela de escolha do jogo */
+.tela-jogo { display: grid; gap: 14px; padding-block: 28px 64px; }
+.voltar-jogos { justify-self: start; padding-left: 0; }
+.tela-jogo h1 { font: 900 clamp(2.6rem, 8vw, 4.6rem)/1.04 var(--f-display); text-transform: uppercase; }
+.tela-jogo .lead { max-width: 42em; }
+.tela-jogo-pergunta { font: 800 clamp(1.5rem, 4vw, 2rem)/1 var(--f-display); text-transform: uppercase; margin-top: 18px; }
+.escolhas { display: grid; grid-template-columns: minmax(0, 1fr); gap: 16px; }
+@media (min-width: 760px) { .escolhas { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+.escolha {
+  display: grid; gap: 12px; align-content: start;
+  padding: 22px; background: var(--surface); border: 1px solid var(--line); border-radius: var(--r);
+}
+.escolha h2 { font: 800 clamp(1.8rem, 4vw, 2.3rem)/1 var(--f-display); text-transform: uppercase; }
+.escolha p:not(.eyebrow) { color: var(--muted); }
+.escolha .btn-pri { justify-self: start; }
+.escolha .versoes { margin-top: 4px; }

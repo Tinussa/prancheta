@@ -44,6 +44,7 @@ const estado = {
   // modo torcida
   torcida: null, // { historico: [{ pergunta, resposta, rotulo }], atual, eliminados: Set, palpites, limite, palpite }
   dificil: null, // { perguntas, idx, historico, rascunho }
+  jogo: null, // jogo aberto na tela de escolha
 };
 
 const esc = (s) => String(s).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]);
@@ -51,29 +52,46 @@ const num = (n) => String(n).padStart(2, '0');
 
 // ---------------------------------------------------------------- Início
 
+// Os 3 jogos: apresentados na página inicial e detalhados na tela de escolha.
+const JOGOS = {
+  treinador: {
+    num: 1,
+    nome: 'Qual treinador você seria?',
+    resumo: 'Responda como você montaria e comandaria um time e descubra com qual treinador do futebol brasileiro você mais combina.',
+    detalhe: 'Situações de jogo, formação, linha de defesa e gestão do elenco. No fim, o seu estilo é comparado com treinadores atuais, lendas e estrangeiros que marcaram o Brasil, de Telê Santana a Abel Ferreira.',
+    qtd: () => `${TREINADORES.length} treinadores`,
+  },
+  time: {
+    num: 2,
+    nome: 'Qual time você escolheria?',
+    resumo: 'Diga como gosta que um time jogue, que elenco quer ter e que clube combina com você, e veja qual time tem a sua cara.',
+    detalhe: 'Tática, perfil de elenco e identidade do clube: torcida, história e gestão. Entram os 20 clubes da Série A 2026 e times históricos, do Santos de 1962 ao Santo André de 2004.',
+    qtd: () => `${TIMES.length} times`,
+  },
+  torcida: {
+    num: 3,
+    nome: 'Qual time você está pensando?',
+    resumo: 'Pense em um clube e responda às perguntas. A Prancheta tenta adivinhar em qual você pensou.',
+    detalhe: 'Perguntas sobre história, títulos, torcida, comunidade e rivais de clubes das Séries A, B, C e D. Escolha entre a adivinhação, que pergunta até acertar, e o quiz de 15 perguntas.',
+    qtd: () => `${CLUBES_TORCIDA.length} clubes`,
+  },
+};
+
 function telaInicio() {
-  const modoCard = (modo, titulo, texto, qtd) => `
-    <article class="modo">
+  const jogoCard = (modo) => {
+    const j = JOGOS[modo];
+    return `
+    <article class="modo jogo">
       <div class="modo-bug">
-        <span class="bug-n">${MODOS[modo].num}</span>
-        <span class="bug-t">Modo ${MODOS[modo].curto.toLowerCase()}</span>
-        <span class="bug-q">${qtd}</span>
+        <span class="bug-n">${j.num}</span>
+        <span class="bug-t">Jogo ${j.num}</span>
+        <span class="bug-q">${j.qtd()}</span>
       </div>
-      <h2>${titulo}</h2>
-      <p>${texto}</p>
-      ${Object.entries(TEMAS).map(([tema, t]) => `
-        <div class="tema">
-          <p class="tema-cab"><b>Responder com ${t.nome.toLowerCase()}</b><span>${t.desc}</span></p>
-          <div class="versoes">
-            <button class="versao${tema === 'futebol' ? ' versao-forte' : ''}" data-acao="iniciar" data-modo="${modo}" data-versao="curta" data-tema="${tema}">
-              <b>Curta</b><span>${TAMANHO.curta} perguntas · 3 min</span>
-            </button>
-            <button class="versao" data-acao="iniciar" data-modo="${modo}" data-versao="completa" data-tema="${tema}">
-              <b>Completa</b><span>${TAMANHO.completa} perguntas · 6 min</span>
-            </button>
-          </div>
-        </div>`).join('')}
+      <h2>${j.nome}</h2>
+      <p>${j.resumo}</p>
+      <button class="btn-pri jogo-btn" data-acao="escolher-jogo" data-modo="${modo}">Jogar →</button>
     </article>`;
+  };
 
   const eixosLista = [...EIXOS_TATICOS, EIXO_ROTACAO].map((e) => `
     <li class="eixo-item">
@@ -87,41 +105,18 @@ function telaInicio() {
   return `
     ${topo()}
     <main>
-      <section class="hero wrap">
+      <section class="hero hero-simples wrap">
         <div class="hero-txt">
           <p class="eyebrow">Futebol brasileiro · tática e fundamentos</p>
           <h1>Monte a sua <em>prancheta</em></h1>
-          <p class="lead">Responda a situações de jogo, escolha a formação e posicione a linha de defesa. No fim, a gente compara o seu estilo com ${TREINADORES.length} treinadores e ${TIMES.length} times do futebol brasileiro.</p>
+          <p class="lead">Três jogos sobre o futebol brasileiro. Escolha um para começar.</p>
         </div>
-        <figure class="hero-campo" aria-hidden="true">
-          ${campo(heroDesenho(), 'campo-hero')}
-          <figcaption><span>4-2-2-2</span> o quadrado mágico</figcaption>
-        </figure>
       </section>
 
-      <section class="modos wrap" id="jogar">
-        ${modoCard('treinador', 'Qual treinador você seria?', 'De Telê Santana a Abel Ferreira, de Zagallo a Filipe Luís. Treinadores atuais, lendas e estrangeiros que marcaram o futebol brasileiro.', `${TREINADORES.length} treinadores`)}
-        ${modoCard('time', 'Qual time você escolheria?', 'Os 20 clubes da Série A 2026, esquadrões como o Santos de 1962 e campanhas inesquecíveis como o Santo André de 2004 e o Paysandu de 2003. Conta tática, elenco e identidade do clube.', `${TIMES.length} times`)}
-        <article class="modo modo-torcida">
-          <div class="modo-bug">
-            <span class="bug-n">3</span>
-            <span class="bug-t">Modo adivinhação</span>
-            <span class="bug-q">${CLUBES_TORCIDA.length} clubes</span>
-          </div>
-          <h2>Qual time você está pensando?</h2>
-          <p>Pense em um clube das Séries A, B, C ou D. Responda sobre história, títulos, torcida, comunidade e rivais, e a Prancheta tenta adivinhar.</p>
-          <div class="tema">
-            <p class="tema-cab"><b>Escolha a dificuldade</b><span>Fácil adivinha; difícil é quiz</span></p>
-            <div class="versoes">
-              <button class="versao versao-forte" data-acao="torcida-iniciar">
-                <b>Modo fácil</b><span>Perguntas até acertar</span>
-              </button>
-              <button class="versao" data-acao="dificil-iniciar">
-                <b>Modo difícil</b><span>${TOTAL_DIFICIL} perguntas · quiz e ações</span>
-              </button>
-            </div>
-          </div>
-        </article>
+      <section class="modos jogos wrap" id="jogar">
+        ${jogoCard('treinador')}
+        ${jogoCard('time')}
+        ${jogoCard('torcida')}
       </section>
 
       ${anuncio('inicio')}
@@ -159,14 +154,53 @@ function telaInicio() {
     ${rodape()}`;
 }
 
-function heroDesenho() {
-  const f = FORMACOES.find((x) => x.id === '4-2-2-2');
+// Tela de escolha de um jogo: tema e versão (jogos 1 e 2) ou dificuldade (jogo 3).
+function telaJogo() {
+  const modo = estado.jogo;
+  const j = JOGOS[modo];
+  const TEXTO_TEMA = {
+    futebol: 'Situações de jogo, tática e seleções, com ações no campinho: escolher a formação, arrastar a linha de defesa e tocar na zona do gol.',
+    cultura: 'Música, cinema, games, arquitetura, cidade e comportamento. Você fala só dos seus gostos; a Prancheta traduz as respostas para o futebol.',
+  };
+  const opcoes = modo === 'torcida' ? `
+      <article class="escolha">
+        <p class="eyebrow">Modo fácil</p>
+        <h2>Adivinhação</h2>
+        <p>Cada pergunta é escolhida pela sua resposta anterior, e a Prancheta pergunta até ter certeza. Ela tem até 3 palpites.</p>
+        <button class="btn-pri" data-acao="torcida-iniciar">Jogar no modo fácil →</button>
+      </article>
+      <article class="escolha">
+        <p class="eyebrow">Modo difícil</p>
+        <h2>Quiz de ${TOTAL_DIFICIL} perguntas</h2>
+        <p>Perguntas fixas, com mapa, camisa para pintar e tamanho da torcida. No fim, aparecem o time, os mais parecidos e o seu oposto.</p>
+        <button class="btn-pri" data-acao="dificil-iniciar">Jogar no modo difícil →</button>
+      </article>`
+    : Object.entries(TEMAS).map(([tema, t]) => `
+      <article class="escolha">
+        <p class="eyebrow">Responder com ${t.nome.toLowerCase()}</p>
+        <h2>${t.nome}</h2>
+        <p>${TEXTO_TEMA[tema]}</p>
+        <div class="versoes">
+          <button class="versao versao-forte" data-acao="iniciar" data-modo="${modo}" data-versao="curta" data-tema="${tema}">
+            <b>Curta</b><span>${TAMANHO.curta} perguntas · 3 min</span>
+          </button>
+          <button class="versao" data-acao="iniciar" data-modo="${modo}" data-versao="completa" data-tema="${tema}">
+            <b>Completa</b><span>${TAMANHO.completa} perguntas · 6 min</span>
+          </button>
+        </div>
+      </article>`).join('');
+
   return `
-    <g class="setas">
-      <path d="M40 24 Q 55 12 70 18" /><path d="M40 44 Q 58 58 74 50" />
-      <path d="M60 24 L 84 30" /><path d="M78 44 Q 88 40 92 34" />
-    </g>
-    ${jogadores(f)}`;
+    ${topo()}
+    <main class="tela-jogo wrap">
+      <button class="btn-link voltar-jogos" data-acao="inicio">← Todos os jogos</button>
+      <p class="eyebrow">Jogo ${j.num} · ${j.qtd()}</p>
+      <h1>${j.nome}</h1>
+      <p class="lead">${j.detalhe}</p>
+      <h2 class="tela-jogo-pergunta">${modo === 'torcida' ? 'Escolha a dificuldade' : 'Como você quer responder?'}</h2>
+      <div class="escolhas">${opcoes}</div>
+    </main>
+    ${rodape()}`;
 }
 
 function topo() {
@@ -584,7 +618,7 @@ function placarTorcida(n, limite, certeza) {
     <div class="placar">
       <div class="wrap placar-in">
         <button class="placar-sair" data-acao="inicio" aria-label="Sair do jogo">✕</button>
-        <span class="placar-modo">Torcida</span>
+        <span class="placar-modo">Adivinhação</span>
         <span class="placar-min tabnum" aria-label="Pergunta ${n + 1}">${num(minuto)}'</span>
         <div class="placar-barra placar-certeza" role="meter" aria-label="Certeza do palpite" aria-valuemin="0" aria-valuemax="100" aria-valuenow="${Math.round(certeza * 100)}"><i style="width:${Math.round(certeza * 100)}%"></i></div>
         <span class="placar-cont tabnum">${num(n + 1)}</span>
@@ -936,7 +970,7 @@ function telaDificil() {
     <div class="placar">
       <div class="wrap placar-in">
         <button class="placar-sair" data-acao="inicio" aria-label="Sair do jogo">✕</button>
-        <span class="placar-modo">Torcida · Difícil</span>
+        <span class="placar-modo">Adivinhação · Difícil</span>
         <span class="placar-min tabnum">${num(Math.round((d.idx / TOTAL_DIFICIL) * 90))}'</span>
         <div class="placar-barra" role="progressbar" aria-valuemin="0" aria-valuemax="${TOTAL_DIFICIL}" aria-valuenow="${d.idx}"><i style="width:${(d.idx / TOTAL_DIFICIL) * 100}%"></i></div>
         <span class="placar-cont tabnum">${num(d.idx + 1)}/${TOTAL_DIFICIL}</span>
@@ -1026,6 +1060,7 @@ const TELAS = {
   palpite: () => telaPalpite(),
   escolher: () => telaEscolher(),
   dificil: () => telaDificil(),
+  jogo: () => telaJogo(),
   resultadoTorcida: () => telaResultadoTorcida(),
 };
 
@@ -1185,6 +1220,10 @@ app.addEventListener('click', (ev) => {
       break;
     case 'avaliar':
       avaliarResultado(Number(el.dataset.nota));
+      break;
+    case 'escolher-jogo':
+      estado.jogo = el.dataset.modo;
+      render('jogo');
       break;
     case 'torcida-iniciar':
       iniciarTorcida();
