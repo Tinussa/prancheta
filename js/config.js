@@ -20,6 +20,6 @@ export const FEEDBACK = {
 // blocos:  IDs das unidades de anúncio criadas no painel (Anúncios → Por bloco de anúncios).
 //          inicio = página inicial; resultado = telas de resultado. Bloco vazio = sem anúncio ali.
 export const ADSENSE = {
-  cliente: '',
+  cliente: 'ca-pub-6247859370935570',
   blocos: { inicio: '', resultado: '' },
 };
