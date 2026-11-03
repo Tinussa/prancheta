@@ -1,0 +1,20 @@
+{
+  "name": "prancheta",
+  "version": "1.0.0",
+  "description": "Jogo de escolhas sobre tática e fundamentos do futebol brasileiro",
+  "type": "module",
+  "scripts": {
+    "dev": "npx serve .",
+    "preview": "npx serve ."
+  },
+  "keywords": [
+    "futebol",
+    "quiz",
+    "brasileiro"
+  ],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "@vercel/speed-insights": "^2.0.0"
+  }
+}
