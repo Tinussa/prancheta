@@ -10,7 +10,7 @@ import { abrirFeedback, enviarAvaliacao } from './feedback.js';
 import {
   CLUBES_TORCIDA, RESPOSTAS_SN, EXTRA_APOS_ERRO, MAX_PALPITES, MAX_PERGUNTAS, TOTAL_DIFICIL,
   posterior, proximaPergunta, horaDeChutar, escudoDoClube, titulosDoClube, clubePorId,
-  montarDificil, perguntasFinaisDificil, ranquearTorcida, opostoDe, RIVAL,
+  montarDificil, perguntasFinaisDificil, ranquearTorcida, opostoDe, RIVAL, nomeSerie,
 } from './torcida.js';
 import { gerarCardTorcida } from './card.js';
 import { ADSENSE } from './config.js';
@@ -691,7 +691,6 @@ function telaEscolher() {
   const t = estado.torcida;
   const dist = posterior(t.historico, new Set());
   const sugestoes = dist.filter((d) => !t.eliminados.has(d.clube.id)).slice(0, 8);
-  const todos = [...CLUBES_TORCIDA].sort((a, b) => a.nome.localeCompare(b.nome, 'pt-BR'));
   return `
     ${topo()}
     <main class="quiz wrap escolher">
@@ -704,15 +703,60 @@ function telaEscolher() {
             ${escudoSVG(escudoDoClube(clube))}<span>${esc(clube.nome)}</span>
           </button>`).join('')}
       </div>
-      <label class="fb-campo escolher-select" for="escolher-todos">Ou procure na lista
-        <select id="escolher-todos">
-          <option value="">Escolha o time</option>
-          ${todos.map((c) => `<option value="${c.id}">${esc(c.nome)} (${esc(c.uf)})</option>`).join('')}
-          <option value="outro">Meu time não está na lista</option>
-        </select>
+      <label class="fb-campo escolher-busca" for="escolher-busca">Ou digite o nome do time
+        <input id="escolher-busca" type="search" autocomplete="off" autocapitalize="words" maxlength="60" placeholder="Nome, apelido ou cidade" data-acao="escolher-busca">
       </label>
+      <ul class="busca-lista" id="busca-lista" aria-label="Times encontrados"></ul>
       <div class="botoes">
-        <button class="btn-pri" data-acao="torcida-escolher-lista">Confirmar</button>
+        <button class="btn-pri" data-acao="torcida-escolher-texto">Confirmar</button>
+      </div>
+      <p class="aviso" role="status"></p>
+    </main>
+    ${rodape()}`;
+}
+
+// Busca sem acento e sem diferenciar maiúsculas, por nome, apelido ou cidade.
+const normalizar = (s) => String(s || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().replace(/[^a-z0-9]+/g, ' ').trim();
+
+function buscarClubes(texto) {
+  const q = normalizar(texto);
+  if (q.length < 2) return [];
+  const pontos = (c) => {
+    const nome = normalizar(c.nome);
+    if (nome === q) return 0;
+    if (nome.startsWith(q)) return 1;
+    if (nome.split(' ').some((p) => p.startsWith(q))) return 2;
+    if (normalizar(c.apelido).includes(q)) return 3;
+    if (normalizar(c.cidade).startsWith(q)) return 4;
+    return nome.includes(q) ? 5 : 9;
+  };
+  return CLUBES_TORCIDA.map((c) => [pontos(c), c]).filter(([p]) => p < 9)
+    .sort((a, b) => a[0] - b[0] || b[1].massa - a[1].massa).slice(0, 8).map(([, c]) => c);
+}
+
+function listaBusca(texto) {
+  const achados = buscarClubes(texto);
+  const box = app.querySelector('#busca-lista');
+  if (!box) return;
+  box.innerHTML = achados.map((c) => `
+    <li><button class="escolher-item" data-acao="torcida-escolher" data-id="${c.id}">
+      ${escudoSVG(escudoDoClube(c))}<span>${esc(c.nome)}<small>${esc(c.cidade)} · ${esc(c.uf)}</small></span>
+    </button></li>`).join('')
+    + (achados.length ? `<li><button class="btn-link" data-acao="torcida-fora-lista">Não é nenhum desses: enviar "${esc(texto.trim())}"</button></li>` : '')
+    || (normalizar(texto).length >= 2 ? `<li class="busca-vazia">Não achamos "${esc(texto)}" na base. Toque em Confirmar para nos contar mesmo assim.</li>` : '');
+}
+
+function telaForaDaLista() {
+  return `
+    ${topo()}
+    <main class="quiz wrap escolher">
+      <p class="eyebrow">Valeu pela ajuda</p>
+      <h1 class="pergunta-txt">${esc(estado.torcida.foraDaLista)} ainda não está na base da Prancheta.</h1>
+      <p class="lead">Anotamos o nome para incluir o clube nas próximas atualizações. Quer tentar de novo com outro time?</p>
+      <div class="botoes">
+        <button class="btn-pri" data-acao="torcida-iniciar">Jogar de novo</button>
+        <button class="btn-sec" data-acao="dificil-iniciar">Tentar o modo difícil</button>
+        <button class="btn-link" data-acao="inicio">Voltar ao início</button>
       </div>
     </main>
     ${rodape()}`;
@@ -733,7 +777,7 @@ function telaResultadoTorcida() {
   const dificil = variante === 'dificil';
   const fatos = [
     ['Cidade', `${c.cidade} (${c.uf})`],
-    ['Divisão em 2026', `Série ${c.serie}`],
+    ['Divisão em 2026', nomeSerie(c)],
     ['Apelido', c.apelido],
     ['Mascote', c.mascote],
     ['Estádio', c.estadio],
@@ -783,7 +827,7 @@ function telaResultadoTorcida() {
             <figure class="res-retrato">${escudoSVG(escudoDoClube(c), 'escudo escudo-g')}</figure>
             <h1>${esc(c.nome)}</h1>
           </div>
-          <p class="res-meta">${esc(c.cidade)} · ${esc(c.uf)} <span class="pill">Série ${c.serie} em 2026</span></p>
+          <p class="res-meta">${esc(c.cidade)} · ${esc(c.uf)} <span class="pill">${c.serie === 'E' ? 'Fora das séries nacionais' : `Série ${c.serie}`} em 2026</span></p>
           <p class="res-estilo">${esc(frase)}</p>
           <div class="botoes res-acoes">
             <button class="btn-pri" data-acao="baixar-card">Baixar card</button>
@@ -1049,13 +1093,14 @@ function mostrarResultadoDificil(clube, match, similares, oposto, compartilhado)
 }
 
 // Quando a Prancheta erra, o relato vai para o feedback para corrigir a base.
-function registrarErroTorcida(real) {
+function registrarErroTorcida(real, digitado = '') {
   const t = estado.torcida;
+  const nome = real ? real.nome : `fora da lista: ${digitado || 'não informado'}`;
   enviarAvaliacao({
     tipo: 'torcida-erro',
-    _subject: `Prancheta · Torcida: errou (era ${real ? real.nome : 'time fora da lista'})`,
+    _subject: `Prancheta · Torcida: errou (era ${nome})`,
     nota: 0,
-    perfil: real ? real.nome : 'time fora da lista',
+    perfil: nome,
     id: real ? real.id : 'outro',
     palpites: [...t.eliminados].join(', '),
     respostas: t.historico.map((h) => `${h.pergunta.id}=${h.valor}`).join('; '),
@@ -1071,6 +1116,7 @@ const TELAS = {
   torcida: () => telaTorcida(),
   palpite: () => telaPalpite(),
   escolher: () => telaEscolher(),
+  foraDaLista: () => telaForaDaLista(),
   dificil: () => telaDificil(),
   jogo: () => telaJogo(),
   resultadoTorcida: () => telaResultadoTorcida(),
@@ -1355,17 +1401,12 @@ app.addEventListener('click', (ev) => {
       resultadoTorcida(clube, false);
       break;
     }
-    case 'torcida-escolher-lista': {
-      const id = app.querySelector('#escolher-todos').value;
-      if (!id) break;
-      if (id === 'outro') {
-        registrarErroTorcida(null);
-        abrirFeedback({ tipo: 'melhoria', sobre: 'Modo adivinhação: o time que pensei não está na lista' });
-        break;
-      }
-      const clube = clubePorId(id);
-      registrarErroTorcida(clube);
-      resultadoTorcida(clube, false);
+    case 'torcida-escolher-texto':
+      escolherDigitado();
+      break;
+    case 'torcida-fora-lista': {
+      const texto = (app.querySelector('#escolher-busca')?.value || '').trim();
+      if (texto) foraDaLista(texto);
       break;
     }
     case 'responder': {
@@ -1403,7 +1444,47 @@ app.addEventListener('click', (ev) => {
   }
 });
 
+// Confirma o que foi digitado: o clube da base que bate com o texto ou, se não houver, o nome livre.
+function escolherDigitado() {
+  const campo = app.querySelector('#escolher-busca');
+  const texto = (campo?.value || '').trim();
+  if (normalizar(texto).length < 2) {
+    aviso('Digite o nome do time (pelo menos 2 letras) ou toque num dos escudos.');
+    campo?.focus();
+    return;
+  }
+  const achados = buscarClubes(texto);
+  const exato = achados.find((c) => normalizar(c.nome) === normalizar(texto) || normalizar(c.apelido) === normalizar(texto));
+  const clube = exato || (achados.length === 1 ? achados[0] : null);
+  if (clube) {
+    registrarErroTorcida(clube);
+    resultadoTorcida(clube, false);
+  } else if (achados.length) {
+    aviso('Toque no time certo na lista acima, ou em "Não é nenhum desses".');
+  } else {
+    foraDaLista(texto);
+  }
+}
+
+function foraDaLista(texto) {
+  estado.torcida.foraDaLista = texto;
+  registrarErroTorcida(null, texto);
+  render('foraDaLista');
+}
+
+app.addEventListener('keydown', (ev) => {
+  if (ev.key === 'Enter' && ev.target.id === 'escolher-busca') {
+    ev.preventDefault();
+    escolherDigitado();
+  }
+});
+
 app.addEventListener('input', (ev) => {
+  if (ev.target.id === 'escolher-busca') {
+    listaBusca(ev.target.value);
+    aviso('');
+    return;
+  }
   if (ev.target.dataset.acao === 'dificil-slider') {
     const d = estado.dificil;
     d.rascunho = Number(ev.target.value);

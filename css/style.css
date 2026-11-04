@@ -255,10 +255,12 @@ p { margin: 0; }
 }
 @media (hover: hover) { .escolher-item:hover { border-color: var(--accent); } }
 .escolher-item .escudo { width: 30px; height: 41px; }
-.escolher-select select {
-  font: 400 1rem/1.4 var(--f-body); letter-spacing: 0; text-transform: none; color: var(--fg);
-  background: var(--bg-2); border: 1px solid var(--line); border-radius: var(--r); padding: 10px 12px; width: 100%;
-}
+.escolher-busca input { font: 400 1rem/1.4 var(--f-body); letter-spacing: 0; text-transform: none; }
+.busca-lista { display: grid; gap: 6px; margin: -8px 0 0; padding: 0; list-style: none; }
+.busca-lista:empty { display: none; }
+.busca-lista .escolher-item { width: 100%; }
+.busca-lista small { display: block; font: 400 0.85rem/1.3 var(--f-body); letter-spacing: 0; color: var(--muted); }
+.busca-vazia { font: 400 0.95rem/1.4 var(--f-body); color: var(--muted); }
 .ficha { margin: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 220px), 1fr)); gap: 1px; background: var(--line); border: 1px solid var(--line); border-radius: var(--r); overflow: hidden; }
 .ficha-item { background: var(--bg-2); padding: 14px 16px; display: grid; gap: 4px; }
 .ficha dt { font: 600 0.8rem/1.2 var(--f-label); letter-spacing: 0.12em; text-transform: uppercase; color: var(--muted); }

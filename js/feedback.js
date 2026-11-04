@@ -69,7 +69,8 @@ export function abrirFeedback({ tipo = 'bug', sobre = '' } = {}) {
 // Nota de 1 a 5 para o resultado. Vai para o mesmo endpoint do feedback, sem incomodar a pessoa
 // se falhar ou se o envio não estiver configurado.
 export function enviarAvaliacao(dados) {
-  if (!FEEDBACK.endpoint) return;
+  // Testes no computador local não enchem a caixa de relatos.
+  if (!FEEDBACK.endpoint || /^(localhost|127\.0\.0\.1|\[::1\])$/.test(location.hostname)) return;
   fetch(FEEDBACK.endpoint, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json', Accept: 'application/json' },

@@ -5,8 +5,8 @@ Jogo de escolhas sobre tática e fundamentos do futebol brasileiro, com dois mod
 - **Qual treinador você seria?** compara seu estilo com 69 treinadores que trabalharam no Brasil (Série A 2026, passagens recentes e lendas).
 - **Qual time tem a sua cara?** compara com os 20 clubes da Série A 2026 e 26 times históricos (campeões, vices e zebras como Santo André 2004 e Paysandu 2003), somando tática, elenco e identidade do clube.
 
-- **Para qual time você torce?** descobre o time de coração entre 81 clubes (Séries A, B e C de 2026 e tradicionais da Série D), sem perguntar o estado direto. Tem dois modos:
-  - **Modo fácil**: adivinhação estilo Akinator, perguntando quanto for preciso, com até 3 palpites.
+- **Qual time você está pensando?** descobre o time entre 275 clubes (Séries A, B e C de 2026, tradicionais da Série D e toda a primeira divisão dos 27 estaduais de 2026), sem perguntar o estado direto. Clubes que só disputam o estadual têm `serie: 'E'`. Tem dois modos:
+  - **Modo fácil**: adivinhação estilo Akinator, perguntando quanto for preciso, com até 3 palpites. Depois de 3 palpites errados, o jogador digita o time (busca por nome, apelido ou cidade; se não estiver na base, o nome digitado é enviado ao Formspree).
   - **Modo difícil**: 15 perguntas fixas (quiz, mapa para tocar, camisa para pintar, sliders de fundação e tamanho da torcida, e duas perguntas finais com os candidatos). Mostra o time, os 5 mais parecidos e o oposto, que é o rival direto quando ele está na base (`RIVAL` em `js/torcida.js`). Dados em `js/data/torcida.js` (campos `null` = desconhecido, não pesam) e motor em `js/torcida.js`. Quando erra, o time certo é enviado ao Formspree para corrigir a base.
 
 Nos dois primeiros modos, cada partida tem 15 perguntas (curta) ou 30 (completa), sorteadas do banco. O jogador escolhe responder com **futebol** (tática e seleções, mais de 50 perguntas por modo) ou com **cultura pop** (música, cinema, games, arquitetura, engenharia, cidade, política e comportamento, ~40 por modo). As perguntas de cultura pop movem os mesmos eixos de futebol; a tradução de cada tema está comentada no topo de `js/data/cultura.js`.

@@ -3,7 +3,7 @@ import { TIPO_TREINADOR } from './data/treinadores.js';
 import { TIPO_TIME } from './data/times.js';
 import { escudoSVG } from './escudos.js';
 import { SITE } from './config.js';
-import { escudoDoClube } from './torcida.js';
+import { escudoDoClube, nomeSerie } from './torcida.js';
 
 // Card 1080 × 1920 (Stories) desenhado em canvas.
 const W = 1080;
@@ -340,7 +340,7 @@ export async function gerarCardTorcida({ clube: c, acertou, perguntas, variante,
   const ficha = [
     ['ESTÁDIO', c.estadio], ['MASCOTE', c.mascote], ['FUNDAÇÃO', c.fundacao],
     dificil && oposto ? ['MEU OPOSTO', oposto.clube.nome] : ['MAIOR RIVAL', c.rival],
-    ['DIVISÃO EM 2026', `Série ${c.serie}`], ['ÍDOLO', c.idolo],
+    ['DIVISÃO EM 2026', nomeSerie(c)], ['ÍDOLO', c.idolo],
   ].filter(([, v]) => v).slice(0, 4);
   const colW = (W - 2 * M) / 2;
   ficha.forEach(([k, v], i) => {

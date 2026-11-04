@@ -33,7 +33,7 @@ const PERGUNTAS = [
     [['N', 'Norte'], ['NE', 'Nordeste'], ['CO', 'Centro-Oeste'], ['SE', 'Sudeste'], ['S', 'Sul']],
     (c) => REGIAO_UF[c.uf]),
   cat('serie', 'Divisão', 'Em que divisão do Brasileirão o time joga em 2026?',
-    [['A', 'Série A'], ['B', 'Série B'], ['C', 'Série C'], ['D', 'Série D']], doCampo('serie')),
+    [['A', 'Série A'], ['B', 'Série B'], ['C', 'Série C'], ['D', 'Série D'], ['E', 'Nenhuma, só o estadual']], doCampo('serie')),
   cat('mascote-tipo', 'Mascote', 'O mascote do time é…',
     [['ave', 'Uma ave'], ['felino', 'Um felino (leão, tigre, onça…)'], ['bicho', 'Outro bicho'],
       ['pessoa', 'Uma pessoa ou personagem'], ['outro', 'Outra coisa (fantasma, furacão…)']], doCampo('mascoteTipo')),
@@ -83,6 +83,9 @@ PERGUNTAS.push(
   sn('mundial', 'Títulos', 'O time já foi campeão do mundo?', doCampo('mundial')),
   sn('mais5br', 'Títulos', 'O time tem mais de 5 títulos brasileiros?', (c) => (c.brasileiros === null ? null : c.brasileiros > 5)),
   sn('br-recente', 'Títulos', 'O time foi campeão brasileiro nos últimos 10 anos?', doCampo('brRecente')),
+  sn('estadual', 'Títulos', 'O time já foi campeão estadual?', (c) => (c.estaduais === null || c.estaduais === undefined ? null : c.estaduais > 0)),
+  sn('mais10estaduais', 'Títulos', 'O time tem mais de 10 títulos estaduais?', (c) => (c.estaduais === null || c.estaduais === undefined ? null : c.estaduais > 10)),
+  sn('seculo21', 'História', 'O time foi fundado neste século, de 2000 para cá?', (c) => (c.fundacao ? c.fundacao >= 2000 : null)),
   sn('caiu', 'História', 'O time já caiu da Série A para a Série B alguma vez?', doCampo('caiu')),
   sn('final-conmebol', 'Títulos', 'O time já jogou uma final de Libertadores ou de Sul-Americana?', doCampo('finalConmebol')),
   sn('estadio-proprio', 'Estádio', 'O estádio onde o time joga pertence ao próprio clube?', doCampo('estadioProprio')),
@@ -122,6 +125,7 @@ PERGUNTAS.forEach((q) => { q.obvia = OBVIAS.has(q.id) || q.id.startsWith('mascot
 // Pergunta final, montada com os candidatos mais prováveis.
 const DINAMICAS = [
   { campo: 'idolo', tag: 'Ídolo', texto: 'Qual destes craques é ídolo desse time?' },
+  { campo: 'estadio', tag: 'Estádio', texto: 'Em qual destes estádios o time costuma mandar os jogos?' },
 ];
 
 // Tolerância a erro: quem pensa num clube responde certo ~88–90% das vezes.
@@ -342,6 +346,7 @@ export const RIVAL = {
   juventude: 'caxias', caxias: 'juventude', brasiliense: 'gama', gama: 'brasiliense',
   confianca: 'sergipe', sergipe: 'confianca', itabaiana: 'confianca', 'botafogo-pb': 'treze', treze: 'botafogo-pb',
   londrina: 'operario-pr', 'operario-pr': 'londrina',
+  'ypiranga-ap': 'macapa', 'macapa': 'ypiranga-ap', 'desportiva-ferroviaria': 'rio-branco-es', 'mixto': 'operario-vg', 'operario-vg': 'mixto', 'campinense': 'treze', 'atletico-roraima': 'bare', 'bare': 'atletico-roraima',
 };
 
 export function opostoDe(top, ranking) {
@@ -377,6 +382,9 @@ export function titulosDoClube(c) {
   if (c.ne) t.push('Copa do Nordeste');
   return t;
 }
+
+// "Série B", ou "Só o estadual" para quem não disputa série nacional em 2026.
+export const nomeSerie = (c) => (c.serie === 'E' ? 'Só o estadual' : `Série ${c.serie}`);
 
 export const clubePorId = (id) => CLUBES_TORCIDA.find((c) => c.id === id);
 export { CLUBES_TORCIDA };
