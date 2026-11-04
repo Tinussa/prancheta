@@ -67,7 +67,10 @@ const PERGUNTAS = [
 ];
 
 // "O mascote é um leão?" etc., para mascotes que aparecem em mais de um clube.
-const ARTIGO = { Águia: 'uma águia', Baleia: 'uma baleia', Macaca: 'uma macaca', Raposa: 'uma raposa' };
+const ARTIGO = {
+  Águia: 'uma águia', Baleia: 'uma baleia', Macaca: 'uma macaca', Raposa: 'uma raposa', Coruja: 'uma coruja', Pantera: 'uma pantera',
+  Arara: 'uma arara', 'Onça-pintada': 'uma onça-pintada', Locomotiva: 'uma locomotiva', Hulk: 'o Hulk',
+};
 const contagem = {};
 CLUBES_TORCIDA.forEach((c) => { if (c.mascote) contagem[c.mascote] = (contagem[c.mascote] || 0) + 1; });
 Object.entries(contagem).filter(([, n]) => n >= 2).forEach(([m]) => {

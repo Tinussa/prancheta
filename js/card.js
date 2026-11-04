@@ -309,8 +309,13 @@ export async function gerarCardTorcida({ clube: c, acertou, perguntas, variante,
   y += 70 - tam * 0.92;
 
   ctx.fillStyle = COR.suave;
-  ctx.font = `500 36px ${CORPO}`;
-  ctx.fillText([c.apelido, `${c.cidade} · ${c.uf}`].filter(Boolean).join('  ·  '), W / 2, y);
+  const sub = [c.apelido, `${c.cidade} · ${c.uf}`].filter(Boolean).join('  ·  ');
+  let tamSub = 36;
+  do {
+    ctx.font = `500 ${tamSub}px ${CORPO}`;
+    tamSub -= 2;
+  } while (ctx.measureText(sub).width > W - 2 * M && tamSub > 22);
+  ctx.fillText(sub, W / 2, y);
 
   // placar da adivinhação
   y += 70;
@@ -340,7 +345,7 @@ export async function gerarCardTorcida({ clube: c, acertou, perguntas, variante,
   const ficha = [
     ['ESTÁDIO', c.estadio], ['MASCOTE', c.mascote], ['FUNDAÇÃO', c.fundacao],
     dificil && oposto ? ['MEU OPOSTO', oposto.clube.nome] : ['MAIOR RIVAL', c.rival],
-    ['DIVISÃO EM 2026', nomeSerie(c)], ['ÍDOLO', c.idolo],
+    ['DIVISÃO EM 2026', nomeSerie(c)], ['ÍDOLO', c.idolo], ['TÍTULOS ESTADUAIS', c.estaduais],
   ].filter(([, v]) => v).slice(0, 4);
   const colW = (W - 2 * M) / 2;
   ficha.forEach(([k, v], i) => {

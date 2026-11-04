@@ -785,13 +785,14 @@ function telaResultadoTorcida() {
     ['Ídolo', c.idolo],
     ['Fundação', c.fundacao],
     ['Grandes títulos', titulosDoClube(c).join(', ')],
+    ['Títulos estaduais', c.estaduais ? String(c.estaduais) : null],
   ].filter(([, v]) => v);
   const frase = compartilhado
     ? `Resultado compartilhado${dificil ? ' · modo difícil' : ''}`
     : dificil
       ? `Modo difícil: ${TOTAL_DIFICIL} perguntas, sem chute no meio do caminho.`
       : acertou
-        ? `A Prancheta acertou em ${perguntas} pergunta${perguntas === 1 ? '' : 's'}`
+        ? (perguntas ? `A Prancheta acertou em ${perguntas} pergunta${perguntas === 1 ? '' : 's'}` : 'A Prancheta acertou')
         : 'Dessa vez a Prancheta errou. Obrigado por ensinar!';
   const placar = dificil
     ? `<div class="res-placar" aria-label="${match}% compatível"><span class="res-pct tabnum">${match}<small>%</small></span><span class="res-pct-rot">compatível</span></div>`
@@ -1454,12 +1455,15 @@ function escolherDigitado() {
     return;
   }
   const achados = buscarClubes(texto);
-  const exato = achados.find((c) => normalizar(c.nome) === normalizar(texto) || normalizar(c.apelido) === normalizar(texto));
+  const alvo = normalizar(texto);
+  const porApelido = CLUBES_TORCIDA.filter((c) => normalizar(c.apelido) === alvo);
+  const exato = achados.find((c) => normalizar(c.nome) === alvo) || (porApelido.length === 1 ? porApelido[0] : null);
   const clube = exato || (achados.length === 1 ? achados[0] : null);
   if (clube) {
     registrarErroTorcida(clube);
     resultadoTorcida(clube, false);
   } else if (achados.length) {
+    listaBusca(texto);
     aviso('Toque no time certo na lista acima, ou em "Não é nenhum desses".');
   } else {
     foraDaLista(texto);
@@ -1568,14 +1572,14 @@ function boot() {
       const clube = clubePorId(id);
       if (clube) {
         const rival = RIVAL[clube.id] && clubePorId(RIVAL[clube.id]);
-        return mostrarResultadoDificil(clube, Math.min(99, Number(m) || 0), [], rival ? { clube: rival, rival: true } : null, true);
+        return mostrarResultadoDificil(clube, Math.max(0, Math.min(99, Math.round(Number(m)) || 0)), [], rival ? { clube: rival, rival: true } : null, true);
       }
     }
   } catch { /* ignora */ }
   if (torcida) {
     const [id, n, ok] = torcida.split('.');
     const clube = clubePorId(id);
-    if (clube) return resultadoTorcida(clube, ok === '1', true, Number(n) || 0);
+    if (clube) return resultadoTorcida(clube, ok === '1', true, Math.max(0, Math.min(99, Math.round(Number(n)) || 0)));
   }
   const dec = decodificar(code);
   if (dec) mostrarResultado(dec.modo, dec, true);
